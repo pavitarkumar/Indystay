@@ -17,7 +17,6 @@ import { Review } from '@/models/Review';
 import { HotelSearchBar } from '@/components/hotels/HotelSearchBar';
 import { HotelCard, HotelCardData } from '@/components/hotels/HotelCard';
 import { HeroVideoBanner } from '@/components/home/HeroVideoBanner';
-import { AnimatedMarqueeBanner } from '@/components/home/AnimatedMarqueeBanner';
 import { AnimatedHotelShowcase } from '@/components/home/AnimatedHotelShowcase';
 import { ReviewsSection } from '@/components/home/ReviewsSection';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
@@ -133,9 +132,6 @@ export default async function HomePage() {
           <HotelSearchBar />
         </div>
       </HeroVideoBanner>
-
-      {/* Animated Infinite Hotel Marquee Ticker */}
-      <AnimatedMarqueeBanner />
 
       {/* Trust & Guarantee Indicators */}
       <section className="bg-white border-b border-slate-200/80 py-8">
