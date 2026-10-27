@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { RoomTypeCard } from './RoomTypeCard';
+import { DynamicUpiQrScanner } from '@/components/payment/DynamicUpiQrScanner';
 import { calculateBookingPrice } from '@/utils/pricing';
 import { calculateNights } from '@/utils/date';
 
@@ -1403,124 +1404,71 @@ export function HotelDetailView({
                   </p>
                 </div>
               ) : (
-                <div className="p-4 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/70 rounded-2xl border-2 border-indigo-200/90 shadow-2xs space-y-3.5">
-                  <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                        ₹
+                <div className="space-y-3">
+                  {/* Option selector: 10% Token Deposit vs 100% Full Payment */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption('ADVANCE_10')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        paymentOption === 'ADVANCE_10'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black">Pay 10% Token</span>
+                        {paymentOption === 'ADVANCE_10' && <Check className="w-3.5 h-3.5 text-white" />}
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
-                          Mandatory Advance Deposit
-                        </span>
-                        <h4 className="text-xs font-black text-slate-900">
-                          Razorpay Secure Checkout
-                        </h4>
+                      <div className={`text-xs font-black mt-0.5 ${paymentOption === 'ADVANCE_10' ? 'text-white' : 'text-indigo-600'}`}>
+                        ₹{Math.round(pricing.totalPrice * 0.10).toLocaleString('en-IN')}
                       </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-sky-700 bg-sky-100/80 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                      Min. 10% Required
-                    </span>
+                      <div className={`text-[9px] mt-0.5 ${paymentOption === 'ADVANCE_10' ? 'text-indigo-100' : 'text-slate-400'}`}>
+                        Balance ₹{(pricing.totalPrice - Math.round(pricing.totalPrice * 0.10)).toLocaleString('en-IN')} at hotel
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption('FULL_100')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        paymentOption === 'FULL_100'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black">Pay 100% Full</span>
+                        {paymentOption === 'FULL_100' && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <div className={`text-xs font-black mt-0.5 ${paymentOption === 'FULL_100' ? 'text-white' : 'text-indigo-600'}`}>
+                        ₹{pricing.totalPrice.toLocaleString('en-IN')}
+                      </div>
+                      <div className={`text-[9px] mt-0.5 ${paymentOption === 'FULL_100' ? 'text-indigo-100' : 'text-slate-400'}`}>
+                        Zero due at check-in
+                      </div>
+                    </button>
                   </div>
 
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    To reserve your room at <strong>{hotel.name}</strong>, please complete at least <strong>10% token deposit</strong> online via Razorpay. The remaining balance will be settled directly at the hotel front desk upon check-in.
-                  </p>
-
-                {/* Option selector: 10% vs 100% */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentOption('ADVANCE_10')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  {/* Dynamic UPI QR Code Scanner with Pre-Filled Amount (Auto-Calculated) */}
+                  <DynamicUpiQrScanner
+                    amount={
                       paymentOption === 'ADVANCE_10'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black">Pay 10% Token</span>
-                      {paymentOption === 'ADVANCE_10' && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <div className={`text-xs font-black mt-0.5 ${paymentOption === 'ADVANCE_10' ? 'text-white' : 'text-indigo-600'}`}>
-                      ₹{Math.round(pricing.totalPrice * 0.10).toLocaleString('en-IN')}
-                    </div>
-                    <div className={`text-[9px] mt-0.5 ${paymentOption === 'ADVANCE_10' ? 'text-indigo-100' : 'text-slate-400'}`}>
-                      Balance ₹{(pricing.totalPrice - Math.round(pricing.totalPrice * 0.10)).toLocaleString('en-IN')} at hotel
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentOption('FULL_100')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      paymentOption === 'FULL_100'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black">Pay 100% Full</span>
-                      {paymentOption === 'FULL_100' && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <div className={`text-xs font-black mt-0.5 ${paymentOption === 'FULL_100' ? 'text-white' : 'text-indigo-600'}`}>
-                      ₹{pricing.totalPrice.toLocaleString('en-IN')}
-                    </div>
-                    <div className={`text-[9px] mt-0.5 ${paymentOption === 'FULL_100' ? 'text-indigo-100' : 'text-slate-400'}`}>
-                      Zero due at check-in
-                    </div>
-                  </button>
-                </div>
-
-                {/* Direct Razorpay Link / Button */}
-                <div className="space-y-2 pt-1">
-                  <a
-                    href="https://razorpay.me/@pavitarkumar"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      setHasOpenedRazorpay(true);
-                      setErrorMsg('');
+                        ? Math.round(pricing.totalPrice * 0.10)
+                        : pricing.totalPrice
+                    }
+                    hotelName={hotel.name}
+                    paymentType={paymentOption}
+                    paymentReference={paymentReferenceInput}
+                    onReferenceChange={(val) => {
+                      setPaymentReferenceInput(val);
+                      if (val.trim()) setHasOpenedRazorpay(true);
                     }}
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer active:scale-[0.99]"
-                  >
-                    <CreditCard className="w-4 h-4 text-sky-400" />
-                    <span>
-                      Open Razorpay to Pay ₹
-                      {paymentOption === 'ADVANCE_10'
-                        ? Math.round(pricing.totalPrice * 0.10).toLocaleString('en-IN')
-                        : pricing.totalPrice.toLocaleString('en-IN')}
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-sky-300 ml-1" />
-                  </a>
-
-                  {hasOpenedRazorpay && (
-                    <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-emerald-800 flex items-center gap-2 animate-in fade-in">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>
-                        Razorpay link opened. Once payment is completed, you can submit your reservation below.
-                      </span>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                      UPI Ref / Payment Transaction ID (Optional if paid via link)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. pay_Nabc123 or UPI UTR (12 digits)"
-                      value={paymentReferenceInput}
-                      onChange={(e) => {
-                        setPaymentReferenceInput(e.target.value);
-                        if (e.target.value.trim()) setHasOpenedRazorpay(true);
-                      }}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 bg-white"
-                    />
-                  </div>
+                    onPaymentConfirmed={() => setHasOpenedRazorpay(true)}
+                  />
                 </div>
-              </div>
-            ))}
+              )
+            )}
 
             {pricing && (
               <div className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between text-xs">
