@@ -5,6 +5,7 @@ export interface DailyPriceItem {
   pricePerNight: number;
   rooms: number;
   amount: number;
+  isLoyaltyFreeNight?: boolean;
 }
 
 export interface GstBreakdown {
@@ -21,6 +22,8 @@ export interface PriceCalculation {
   numberOfNights: number;
   numberOfRooms: number;
   baseTotal: number;
+  loyaltyDiscountAmount: number;
+  discountedBaseTotal: number;
   taxRatePercent: number;
   taxesAndFees: number;
   totalPrice: number;
@@ -28,23 +31,32 @@ export interface PriceCalculation {
   sgstAmount: number;
   dailyBreakdown: DailyPriceItem[];
   gstBreakdown: GstBreakdown;
+  appliedLoyaltyFreeNight: boolean;
 }
 
 export function calculateBookingPrice(
   basePricePerNight: number,
   numberOfNights: number,
   numberOfRooms: number = 1,
-  checkInDate?: string | Date
+  checkInDate?: string | Date,
+  applyLoyaltyFreeNight: boolean = false
 ): PriceCalculation {
   if (basePricePerNight < 0) throw new Error('Base price cannot be negative');
   if (numberOfNights < 1) throw new Error('Stay must be at least 1 night');
   if (numberOfRooms < 1) throw new Error('Must book at least 1 room');
 
   const baseTotal = Math.round(basePricePerNight * numberOfNights * numberOfRooms);
-  // Standard 12% GST for hotel stays
+
+  // Royalty Reward: 1 room for 1 night is 100% free
+  const loyaltyDiscountAmount = applyLoyaltyFreeNight
+    ? Math.min(baseTotal, Math.round(basePricePerNight * 1))
+    : 0;
+  const discountedBaseTotal = Math.max(0, baseTotal - loyaltyDiscountAmount);
+
+  // Standard 12% GST calculated on net payable base
   const taxRatePercent = 12;
-  const taxesAndFees = Math.round(baseTotal * (taxRatePercent / 100));
-  const totalPrice = baseTotal + taxesAndFees;
+  const taxesAndFees = Math.round(discountedBaseTotal * (taxRatePercent / 100));
+  const totalPrice = discountedBaseTotal + taxesAndFees;
 
   const cgstPercent = taxRatePercent / 2; // 6%
   const sgstPercent = taxRatePercent / 2; // 6%
@@ -76,13 +88,19 @@ export function calculateBookingPrice(
       year: 'numeric',
     });
 
+    const isFirstNightDiscounted = applyLoyaltyFreeNight && i === 0;
+    const nightlyAmount = isFirstNightDiscounted
+      ? Math.max(0, Math.round(basePricePerNight * (numberOfRooms - 1)))
+      : Math.round(basePricePerNight * numberOfRooms);
+
     dailyBreakdown.push({
       nightIndex: i + 1,
       dateStr,
       formattedDate,
       pricePerNight: basePricePerNight,
       rooms: numberOfRooms,
-      amount: Math.round(basePricePerNight * numberOfRooms),
+      amount: nightlyAmount,
+      isLoyaltyFreeNight: isFirstNightDiscounted,
     });
   }
 
@@ -91,6 +109,8 @@ export function calculateBookingPrice(
     numberOfNights,
     numberOfRooms,
     baseTotal,
+    loyaltyDiscountAmount,
+    discountedBaseTotal,
     taxRatePercent,
     taxesAndFees,
     totalPrice,
@@ -98,5 +118,6 @@ export function calculateBookingPrice(
     sgstAmount,
     dailyBreakdown,
     gstBreakdown,
+    appliedLoyaltyFreeNight: applyLoyaltyFreeNight,
   };
 }

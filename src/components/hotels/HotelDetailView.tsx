@@ -27,6 +27,8 @@ import {
   Sparkles,
   ArrowLeft,
   ExternalLink,
+  Crown,
+  Gift,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -152,6 +154,12 @@ export function HotelDetailView({
   const [paymentOption, setPaymentOption] = useState<'ADVANCE_10' | 'FULL_100'>('ADVANCE_10');
   const [paymentReferenceInput, setPaymentReferenceInput] = useState('');
   const [hasOpenedRazorpay, setHasOpenedRazorpay] = useState(false);
+  const [loyaltyData, setLoyaltyData] = useState<{
+    currentSlices: number;
+    freeNightsAvailable: number;
+    isRewardReady: boolean;
+  } | null>(null);
+  const [applyLoyaltyFreeNight, setApplyLoyaltyFreeNight] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -162,6 +170,15 @@ export function HotelDetailView({
           setFullName((prev) => prev || d.user.name || '');
           setEmail((prev) => prev || d.user.email || '');
           setPhone((prev) => prev || d.user.phone || '');
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/loyalty')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          setLoyaltyData(d.data);
         }
       })
       .catch(() => {});
@@ -313,7 +330,13 @@ export function HotelDetailView({
 
   const nights = calculateNights(checkIn, checkOut);
   const pricing = selectedRoomType
-    ? calculateBookingPrice(selectedRoomType.roomType.basePrice, nights, rooms, checkIn)
+    ? calculateBookingPrice(
+        selectedRoomType.roomType.basePrice,
+        nights,
+        rooms,
+        checkIn,
+        applyLoyaltyFreeNight
+      )
     : null;
 
   const fetchRoomAvailability = async (
@@ -347,6 +370,7 @@ export function HotelDetailView({
     setPaymentOption('ADVANCE_10');
     setPaymentReferenceInput('');
     setHasOpenedRazorpay(false);
+    setApplyLoyaltyFreeNight(false);
     if (currentUser) {
       if (!fullName && currentUser.name) setFullName(currentUser.name);
       if (!email && currentUser.email) setEmail(currentUser.email);
@@ -359,7 +383,9 @@ export function HotelDetailView({
     e.preventDefault();
     if (!selectedRoomTypeId) return;
 
-    if (!hasOpenedRazorpay && !paymentReferenceInput) {
+    const isFreeStay = pricing && pricing.totalPrice === 0;
+
+    if (!isFreeStay && !hasOpenedRazorpay && !paymentReferenceInput) {
       setErrorMsg('Please click the Razorpay button below to pay the mandatory 10% advance deposit before confirming.');
       return;
     }
@@ -381,7 +407,8 @@ export function HotelDetailView({
           children: 0,
           numberOfRooms: rooms,
           paymentType: paymentOption,
-          paymentReference: paymentReferenceInput || `RZP_${Date.now().toString(36).toUpperCase()}`,
+          paymentReference: paymentReferenceInput || (isFreeStay ? 'ROYALTY_FREE_DAY' : `RZP_${Date.now().toString(36).toUpperCase()}`),
+          applyLoyaltyFreeNight,
           guestDetails: {
             fullName,
             email,
@@ -919,6 +946,55 @@ export function HotelDetailView({
               </div>
             )}
 
+            {/* Royalty Free Stay Voucher Card (5/5 Slices Reward) */}
+            {loyaltyData && (loyaltyData.isRewardReady || loyaltyData.freeNightsAvailable > 0) && selectedRoomType && (
+              <div className="p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-50 to-amber-100/70 rounded-2xl border-2 border-amber-300 text-xs shadow-2xs space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start sm:items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                      👑
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-amber-950 text-xs sm:text-sm">
+                          1-Day Free Room Stay Available!
+                        </span>
+                        <span className="text-[10px] font-extrabold text-amber-800 bg-amber-200/90 px-2 py-0.2 rounded-full border border-amber-300">
+                          Royalty Reward
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-amber-800 mt-0.5">
+                        You collected 5 slices! Apply now to get <strong>1 Night Base Room Charges 100% FREE</strong> (Saves ₹{selectedRoomType.roomType.basePrice.toLocaleString('en-IN')}).
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0 self-start sm:self-auto ${
+                    applyLoyaltyFreeNight
+                      ? 'bg-amber-600 text-white ring-2 ring-amber-400'
+                      : 'bg-white hover:bg-amber-100 text-amber-900 border border-amber-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={applyLoyaltyFreeNight}
+                      onChange={(e) => setApplyLoyaltyFreeNight(e.target.checked)}
+                      className="rounded text-amber-600 focus:ring-0 w-4 h-4 cursor-pointer"
+                    />
+                    <span>{applyLoyaltyFreeNight ? 'Free Day Applied ✓' : 'Apply 1-Day Free'}</span>
+                  </label>
+                </div>
+
+                {applyLoyaltyFreeNight && (
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-emerald-800 font-semibold flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Royalty Reward Applied! 1 Night (₹{selectedRoomType.roomType.basePrice.toLocaleString('en-IN')}) is 100% Free on this booking.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Stay Summary Card with Live Date Change Picker & Full Day-Wise + GST Breakdown */}
             {selectedRoomType && pricing && (
               <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200/90 text-xs space-y-3 shadow-2xs">
@@ -983,32 +1059,63 @@ export function HotelDetailView({
                     {pricing.dailyBreakdown.map((item) => (
                       <div
                         key={item.nightIndex}
-                        className="flex items-center justify-between text-[11px] text-slate-600 hover:text-slate-900 transition-colors"
+                        className={`flex items-center justify-between text-[11px] transition-colors ${
+                          item.isLoyaltyFreeNight
+                            ? 'bg-amber-50 p-1.5 rounded-lg border border-amber-200 text-amber-900 font-bold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
                       >
                         <span className="flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[9px] flex items-center justify-center shrink-0">
-                            {item.nightIndex}
+                          <span className={`w-4 h-4 rounded-full font-bold text-[9px] flex items-center justify-center shrink-0 ${
+                            item.isLoyaltyFreeNight ? 'bg-amber-500 text-slate-950' : 'bg-indigo-50 text-indigo-700'
+                          }`}>
+                            {item.isLoyaltyFreeNight ? '👑' : item.nightIndex}
                           </span>
                           <span className="font-medium">{item.formattedDate}</span>
+                          {item.isLoyaltyFreeNight && (
+                            <span className="text-[10px] text-amber-800 font-extrabold bg-amber-200/90 px-1.5 rounded">
+                              100% FREE (Royalty Club)
+                            </span>
+                          )}
                         </span>
                         <span className="font-semibold text-slate-800">
-                          ₹{item.pricePerNight.toLocaleString('en-IN')}
-                          {rooms > 1 && (
-                            <span className="text-[10px] text-slate-400 font-normal">
-                              {' '}× {rooms} = ₹{item.amount.toLocaleString('en-IN')}
+                          {item.isLoyaltyFreeNight ? (
+                            <span className="text-emerald-700 font-black">
+                              FREE (₹0)
                             </span>
+                          ) : (
+                            <>
+                              ₹{item.pricePerNight.toLocaleString('en-IN')}
+                              {rooms > 1 && (
+                                <span className="text-[10px] text-slate-400 font-normal">
+                                  {' '}× {rooms} = ₹{item.amount.toLocaleString('en-IN')}
+                                </span>
+                              )}
+                            </>
                           )}
                         </span>
                       </div>
                     ))}
                   </div>
 
+                  {pricing.loyaltyDiscountAmount > 0 && (
+                    <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                      <span className="font-bold text-amber-800 flex items-center gap-1">
+                        <Crown className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Royalty 1-Day Free Discount:</span>
+                      </span>
+                      <span className="font-extrabold text-emerald-600">
+                        - ₹{pricing.loyaltyDiscountAmount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
                     <span className="font-bold text-slate-700">
                       Base Room Charges ({nights} Night{nights > 1 ? 's' : ''}{rooms > 1 ? ` × ${rooms} Rooms` : ''}):
                     </span>
                     <span className="font-extrabold text-slate-900">
-                      ₹{pricing.baseTotal.toLocaleString('en-IN')}
+                      ₹{pricing.discountedBaseTotal.toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
@@ -1269,31 +1376,56 @@ export function HotelDetailView({
               </div>
             </div>
 
-            {/* Razorpay Advance Payment Section */}
+            {/* Razorpay Advance Payment Section or 100% Free Stay Covered by Royalty */}
             {pricing && (
-              <div className="p-4 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/70 rounded-2xl border-2 border-indigo-200/90 shadow-2xs space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      ₹
+              pricing.totalPrice === 0 ? (
+                <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/70 border-2 border-emerald-300 rounded-2xl text-xs space-y-2 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                        👑
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                          Royalty Free Day Reward
+                        </span>
+                        <h4 className="text-xs font-black text-emerald-950">
+                          100% Free Room Stay Voucher
+                        </h4>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
-                        Mandatory Advance Deposit
-                      </span>
-                      <h4 className="text-xs font-black text-slate-900">
-                        Razorpay Secure Checkout
-                      </h4>
-                    </div>
+                    <span className="text-xs font-black text-emerald-800 bg-white px-3 py-1 rounded-xl border border-emerald-200 shadow-2xs">
+                      ₹0 Due (100% Free)
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold text-sky-700 bg-sky-100/80 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                    Min. 10% Required
-                  </span>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    Zero payment required! Your stay is fully covered by your 5-Slice Royalty Club reward. Submit your request below to receive your instant reservation reference.
+                  </p>
                 </div>
+              ) : (
+                <div className="p-4 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/70 rounded-2xl border-2 border-indigo-200/90 shadow-2xs space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                        ₹
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
+                          Mandatory Advance Deposit
+                        </span>
+                        <h4 className="text-xs font-black text-slate-900">
+                          Razorpay Secure Checkout
+                        </h4>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-sky-700 bg-sky-100/80 border border-sky-200 px-2.5 py-0.5 rounded-full">
+                      Min. 10% Required
+                    </span>
+                  </div>
 
-                <p className="text-[11px] text-slate-600 leading-relaxed">
-                  To reserve your room at <strong>{hotel.name}</strong>, please complete at least <strong>10% token deposit</strong> online via Razorpay. The remaining balance will be settled directly at the hotel front desk upon check-in.
-                </p>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    To reserve your room at <strong>{hotel.name}</strong>, please complete at least <strong>10% token deposit</strong> online via Razorpay. The remaining balance will be settled directly at the hotel front desk upon check-in.
+                  </p>
 
                 {/* Option selector: 10% vs 100% */}
                 <div className="grid grid-cols-2 gap-2">
@@ -1388,7 +1520,7 @@ export function HotelDetailView({
                   </div>
                 </div>
               </div>
-            )}
+            ))}
 
             {pricing && (
               <div className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between text-xs">

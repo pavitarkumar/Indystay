@@ -3,6 +3,12 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export type UserRole = 'SUPER_ADMIN' | 'HOTEL_ADMIN' | 'CUSTOMER';
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
 
+export interface ILoyalty {
+  completedBookingsCount: number;
+  freeNightsAvailable: number;
+  totalRewardsClaimed: number;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -12,6 +18,7 @@ export interface IUser extends Document {
   accountStatus: AccountStatus;
   emailVerifiedAt?: Date | null;
   assignedHotelId?: mongoose.Types.ObjectId | null;
+  loyalty?: ILoyalty;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +43,11 @@ const UserSchema = new Schema<IUser>(
     },
     emailVerifiedAt: { type: Date, default: null },
     assignedHotelId: { type: Schema.Types.ObjectId, ref: 'Hotel', default: null, index: true },
+    loyalty: {
+      completedBookingsCount: { type: Number, default: 0 },
+      freeNightsAvailable: { type: Number, default: 0 },
+      totalRewardsClaimed: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,

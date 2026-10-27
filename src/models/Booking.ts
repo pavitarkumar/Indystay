@@ -54,6 +54,8 @@ export interface IBooking extends Document {
   advancePaymentAmount?: number;
   balanceDueAtHotel?: number;
   paymentTimestamp?: Date;
+  appliedLoyaltyFreeNight?: boolean;
+  loyaltyDiscountAmount?: number;
   guestDetails: IGuestDetails;
   cancellationReason?: string;
   cancellationTimestamp?: Date;
@@ -121,6 +123,8 @@ const BookingSchema = new Schema<IBooking>(
     advancePaymentAmount: { type: Number },
     balanceDueAtHotel: { type: Number },
     paymentTimestamp: { type: Date },
+    appliedLoyaltyFreeNight: { type: Boolean, default: false },
+    loyaltyDiscountAmount: { type: Number, default: 0 },
     guestDetails: {
       fullName: { type: String, required: true },
       email: { type: String, required: true },

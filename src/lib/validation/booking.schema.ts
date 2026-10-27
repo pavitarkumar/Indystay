@@ -12,6 +12,7 @@ export const createBookingSchema = z
     selectedPhysicalRoomId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Physical Room ID').optional(),
     paymentType: z.enum(['ADVANCE_10', 'FULL_100']).default('ADVANCE_10'),
     paymentReference: z.string().optional(),
+    applyLoyaltyFreeNight: z.boolean().optional(),
     guestDetails: z.object({
       fullName: z.string().min(2, 'Guest full name is required'),
       email: z.string().email('Valid guest email is required'),

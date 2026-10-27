@@ -8,6 +8,7 @@ import { calculateNights, parseDateOnly } from '@/utils/date';
 import { assignRoomsToBooking } from './inventory.service';
 import { createNotification } from '@/lib/notifications/notification.service';
 import { createAuditLog } from '@/lib/audit/audit.service';
+import { getCustomerLoyalty, redeemCustomerFreeNight } from './loyalty.service';
 import mongoose from 'mongoose';
 
 function generateBookingReference(): string {
@@ -31,6 +32,7 @@ export interface CreateBookingRequestParams {
   selectedPhysicalRoomId?: string;
   paymentType?: 'ADVANCE_10' | 'FULL_100';
   paymentReference?: string;
+  applyLoyaltyFreeNight?: boolean;
   guestDetails: {
     fullName: string;
     email: string;
@@ -79,8 +81,30 @@ export async function createBookingRequest(params: CreateBookingRequestParams): 
     );
   }
 
-  // Calculate pricing server-side
-  const pricing = calculateBookingPrice(roomType.basePrice, numberOfNights, numberOfRooms);
+  // Check if loyalty free night reward is requested
+  let appliedLoyalty = false;
+  if (params.applyLoyaltyFreeNight) {
+    const loyalty = await getCustomerLoyalty(params.customerId);
+    if (loyalty.freeNightsAvailable > 0 || loyalty.isRewardReady) {
+      appliedLoyalty = true;
+    } else {
+      throw new Error('No 1-Day Free Stay rewards available in your Royalty account.');
+    }
+  }
+
+  // Calculate pricing server-side (with 1-day free room discount if applicable)
+  const pricing = calculateBookingPrice(
+    roomType.basePrice,
+    numberOfNights,
+    numberOfRooms,
+    checkIn,
+    appliedLoyalty
+  );
+
+  // If loyalty free stay reward used, deduct 1 reward from customer
+  if (appliedLoyalty) {
+    await redeemCustomerFreeNight(params.customerId);
+  }
 
   let bookingReference = generateBookingReference();
   let existing = await Booking.findOne({ bookingReference });
@@ -114,11 +138,15 @@ export async function createBookingRequest(params: CreateBookingRequestParams): 
   }
 
   const isFullPayment = params.paymentType === 'FULL_100';
-  const advancePaymentAmount = isFullPayment
+  const isFreeStay = pricing.totalPrice === 0;
+  const advancePaymentAmount = isFreeStay
+    ? 0
+    : isFullPayment
     ? pricing.totalPrice
     : Math.round(pricing.totalPrice * 0.10);
   const balanceDueAtHotel = pricing.totalPrice - advancePaymentAmount;
-  const paymentStatus = isFullPayment ? 'PAID' : 'PARTIALLY_PAID';
+  const paymentStatus = isFreeStay || isFullPayment ? 'PAID' : 'PARTIALLY_PAID';
+  const paymentMethod = isFreeStay ? 'ROYALTY_FREE_DAY' : 'RAZORPAY';
 
   const booking = await Booking.create({
     bookingReference,
@@ -141,8 +169,10 @@ export async function createBookingRequest(params: CreateBookingRequestParams): 
     currency: roomType.currency || 'INR',
     bookingStatus: 'PENDING',
     paymentStatus,
-    paymentMethod: 'RAZORPAY',
-    paymentReference: params.paymentReference || `RZP-${Date.now().toString(36).toUpperCase()}`,
+    paymentMethod,
+    appliedLoyaltyFreeNight: appliedLoyalty,
+    loyaltyDiscountAmount: pricing.loyaltyDiscountAmount,
+    paymentReference: params.paymentReference || (isFreeStay ? 'ROYALTY_VOUCHER_100' : `RZP-${Date.now().toString(36).toUpperCase()}`),
     advancePaymentAmount,
     balanceDueAtHotel,
     paymentTimestamp: new Date(),

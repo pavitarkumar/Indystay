@@ -129,6 +129,7 @@ export async function POST(req: NextRequest) {
       selectedPhysicalRoomId: parsed.data.selectedPhysicalRoomId,
       paymentType: parsed.data.paymentType,
       paymentReference: parsed.data.paymentReference,
+      applyLoyaltyFreeNight: parsed.data.applyLoyaltyFreeNight,
       guestDetails: parsed.data.guestDetails,
     });
 

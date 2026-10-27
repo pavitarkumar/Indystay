@@ -13,6 +13,7 @@ import {
   Building2,
   Menu,
   X,
+  Crown,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,17 +127,27 @@ export function Navbar() {
             </Link>
 
             {user?.role === 'CUSTOMER' && (
-              <Link
-                href="/account/bookings"
-                className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                  pathname.startsWith('/account/bookings')
-                    ? 'text-indigo-600 bg-indigo-50/50'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                <Calendar className="w-4 h-4" />
-                My Bookings
-              </Link>
+              <>
+                <Link
+                  href="/account/bookings"
+                  className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                    pathname.startsWith('/account/bookings')
+                      ? 'text-indigo-600 bg-indigo-50/50'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  My Bookings
+                </Link>
+                <Link
+                  href="/account/bookings"
+                  className="px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 bg-gradient-to-r from-amber-500/10 via-amber-100 to-amber-200/60 text-amber-900 border border-amber-300 hover:bg-amber-100 transition-colors shadow-2xs"
+                  title="IndiStay Royalty Club: 5 Stays = 1 Day Free Room"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-600 fill-amber-400" />
+                  <span>Royalty Club</span>
+                </Link>
+              </>
             )}
 
             {user?.role === 'HOTEL_ADMIN' && (
