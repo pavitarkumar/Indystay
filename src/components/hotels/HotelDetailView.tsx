@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { RoomTypeCard } from './RoomTypeCard';
 import { DynamicUpiQrScanner } from '@/components/payment/DynamicUpiQrScanner';
+import { HotelChatWidget } from '@/components/chat/HotelChatWidget';
 import { calculateBookingPrice } from '@/utils/pricing';
 import { calculateNights } from '@/utils/date';
 
@@ -135,7 +136,7 @@ export function HotelDetailView({
     roomNumber?: string;
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [currentUser, setCurrentUser] = useState<{ name?: string; email?: string; phone?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id?: string; name?: string; email?: string; phone?: string; role?: string } | null>(null);
 
   // Physical room selection state
   const [availableRooms, setAvailableRooms] = useState<
@@ -1508,6 +1509,13 @@ export function HotelDetailView({
           </form>
         )}
       </Modal>
+
+      {/* Direct Hotel Chat Widget */}
+      <HotelChatWidget
+        hotelId={hotel._id}
+        hotelName={hotel.name}
+        user={currentUser ? { id: currentUser.id || '', name: currentUser.name || 'Guest', role: currentUser.role } : null}
+      />
     </div>
   );
 }

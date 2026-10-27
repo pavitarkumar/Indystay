@@ -6,3 +6,4 @@ export * from './Booking';
 export * from './Review';
 export * from './Notification';
 export * from './AuditLog';
+export * from './ChatMessage';

@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Key,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -32,6 +33,7 @@ export function AdminSidebar({ type, hotelName }: AdminSidebarProps) {
 
   const hotelAdminItems: SidebarItem[] = [
     { label: 'Overview', href: '/hotel-admin', icon: LayoutDashboard },
+    { label: 'Guest Messages', href: '/hotel-admin/messages', icon: MessageSquare },
     { label: 'Booking Requests', href: '/hotel-admin/requests', icon: CalendarCheck },
     { label: 'Rooms & Types', href: '/hotel-admin/rooms', icon: BedDouble },
     { label: 'Property Details', href: '/hotel-admin/property', icon: Building },
