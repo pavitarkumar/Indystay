@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   Hotel as HotelIcon,
@@ -99,9 +100,16 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-              <HotelIcon className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 shrink-0 group-hover:scale-105 transition-transform duration-200">
+              <Image
+                src="/icon.png"
+                alt="IndiStay Emblem"
+                fill
+                sizes="40px"
+                className="object-cover"
+                priority
+              />
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-slate-900">

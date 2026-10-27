@@ -7,6 +7,14 @@ export const metadata: Metadata = {
   title: 'IndiStay — Production-Grade Hotel Booking Platform',
   description:
     'Discover and book handpicked luxury hotels, boutique resorts, and royal havelis across India with instant verified confirmation.',
+  icons: {
+    icon: [
+      { url: '/icon.png', sizes: 'any' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
