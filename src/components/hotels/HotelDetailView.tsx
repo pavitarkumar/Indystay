@@ -162,6 +162,8 @@ export function HotelDetailView({
     isRewardReady: boolean;
   } | null>(null);
   const [applyLoyaltyFreeNight, setApplyLoyaltyFreeNight] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryPhotoIndex, setGalleryPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -449,6 +451,16 @@ export function HotelDetailView({
     ...(hotel.images?.map((img) => img.url) || []),
   ];
 
+  const fullGallery = [
+    ...(hotel.coverImage
+      ? [{ url: hotel.coverImage.url, caption: hotel.coverImage.alt || `${hotel.name} - Exterior Architecture` }]
+      : []),
+    ...(hotel.images?.map((img) => ({
+      url: img.url,
+      caption: img.caption || `${hotel.name} - Luxury Showcase`,
+    })) || []),
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Back Navigation Bar */}
@@ -505,34 +517,139 @@ export function HotelDetailView({
       </div>
 
       {/* Image Gallery Showcase */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-3 h-[320px] sm:h-[420px] rounded-2xl overflow-hidden shadow-sm">
-        <div className="relative md:col-span-2 h-full bg-slate-100">
-          <Image
-            src={
-              allImages[0] ||
-              'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
-            }
-            alt={hotel.name}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover hover:scale-105 transition-transform duration-500"
-          />
+      <div className="relative mt-6 rounded-2xl overflow-hidden shadow-sm group">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[320px] sm:h-[440px]">
+          <div
+            onClick={() => {
+              setGalleryPhotoIndex(0);
+              setIsGalleryOpen(true);
+            }}
+            className="relative md:col-span-2 h-full bg-slate-100 cursor-pointer overflow-hidden"
+          >
+            <Image
+              src={
+                allImages[0] ||
+                'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+              }
+              alt={hotel.name}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/10 hover:bg-transparent transition-colors" />
+          </div>
+          <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-3 h-full">
+            {allImages.slice(1, 5).map((imgUrl, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  setGalleryPhotoIndex(i + 1);
+                  setIsGalleryOpen(true);
+                }}
+                className="relative h-full bg-slate-100 overflow-hidden cursor-pointer"
+              >
+                <Image
+                  src={imgUrl}
+                  alt={`${hotel.name} gallery ${i + 1}`}
+                  fill
+                  sizes="25vw"
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/10 hover:bg-transparent transition-colors" />
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-3 h-full">
-          {allImages.slice(1, 5).map((imgUrl, i) => (
-            <div key={i} className="relative h-full bg-slate-100 overflow-hidden">
+
+        {/* View All Photos Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setGalleryPhotoIndex(0);
+            setIsGalleryOpen(true);
+          }}
+          className="absolute bottom-4 right-4 z-10 flex items-center gap-2 px-4 py-2.5 bg-white/95 hover:bg-white text-slate-800 text-xs font-bold rounded-xl shadow-lg hover:shadow-xl backdrop-blur-md border border-slate-200 transition-all transform hover:scale-105 cursor-pointer"
+        >
+          <Camera className="w-4 h-4 text-indigo-600" />
+          <span>View All Photos ({fullGallery.length})</span>
+        </button>
+      </div>
+
+      {/* Full Luxury Hotel Photo Gallery Lightbox */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6 animate-in fade-in duration-200">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between text-white pb-3 border-b border-white/10">
+            <div>
+              <h3 className="font-extrabold text-base sm:text-lg tracking-tight text-white">
+                {hotel.name}
+              </h3>
+              <p className="text-xs text-slate-300 font-medium">
+                Photo {galleryPhotoIndex + 1} of {fullGallery.length} • {fullGallery[galleryPhotoIndex]?.caption}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsGalleryOpen(false)}
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              aria-label="Close Gallery"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Main Full-Size Image & Arrows */}
+          <div className="relative flex-1 flex items-center justify-center my-4 min-h-[300px]">
+            <button
+              onClick={() =>
+                setGalleryPhotoIndex((prev) => (prev === 0 ? fullGallery.length - 1 : prev - 1))
+              }
+              className="absolute left-2 sm:left-4 z-20 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all cursor-pointer"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <div className="relative w-full max-w-5xl h-full max-h-[70vh] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src={imgUrl}
-                alt={`${hotel.name} gallery ${i + 1}`}
+                src={fullGallery[galleryPhotoIndex]?.url || allImages[0]}
+                alt={fullGallery[galleryPhotoIndex]?.caption || hotel.name}
                 fill
-                sizes="25vw"
-                className="object-cover hover:scale-105 transition-transform duration-500"
+                priority
+                className="object-contain"
+                sizes="(max-width: 1280px) 100vw, 1280px"
               />
             </div>
-          ))}
+
+            <button
+              onClick={() =>
+                setGalleryPhotoIndex((prev) => (prev === fullGallery.length - 1 ? 0 : prev + 1))
+              }
+              className="absolute right-2 sm:right-4 z-20 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all cursor-pointer"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Bottom Thumbnails Strip */}
+          <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 px-2 max-w-4xl mx-auto scrollbar-none">
+            {fullGallery.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setGalleryPhotoIndex(idx)}
+                className={`relative w-16 h-12 sm:w-20 sm:h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                  idx === galleryPhotoIndex
+                    ? 'border-indigo-500 scale-105 shadow-md shadow-indigo-500/30'
+                    : 'border-white/20 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <Image src={img.url} alt={img.caption || ''} fill sizes="80px" className="object-cover" />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Stay Date & Occupancy Selector Bar */}
       <div className="mt-8 bg-white rounded-2xl p-4 shadow-md border border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
