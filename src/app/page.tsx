@@ -17,7 +17,6 @@ import { Review } from '@/models/Review';
 import { HotelSearchBar } from '@/components/hotels/HotelSearchBar';
 import { HotelCard, HotelCardData } from '@/components/hotels/HotelCard';
 import { HeroVideoBanner } from '@/components/home/HeroVideoBanner';
-import { AnimatedHotelShowcase } from '@/components/home/AnimatedHotelShowcase';
 import { ReviewsSection } from '@/components/home/ReviewsSection';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
 
@@ -179,9 +178,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Flagship Animated Luxury Hotel Spotlight Carousel */}
-      <AnimatedHotelShowcase />
 
       {/* Featured Verified Hotels */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
