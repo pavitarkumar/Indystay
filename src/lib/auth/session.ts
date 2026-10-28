@@ -6,7 +6,13 @@ const COOKIE_NAME = 'indistay_session';
 const DEFAULT_SECRET = 'indistay_jwt_secret_dev_32_bytes_super_secure_key!';
 
 function getSecretKey(): Uint8Array {
-  const secret = process.env.AUTH_SECRET || DEFAULT_SECRET;
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[IndiStay Auth] CRITICAL: AUTH_SECRET environment variable is missing in production!');
+    }
+    return new TextEncoder().encode(DEFAULT_SECRET);
+  }
   return new TextEncoder().encode(secret);
 }
 

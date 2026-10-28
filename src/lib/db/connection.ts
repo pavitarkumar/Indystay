@@ -18,11 +18,14 @@ if (!cached) {
   cached = global.mongooseCache = { conn: null, promise: null };
 }
 
-const FALLBACK_MONGODB_URI =
-  'mongodb+srv://pavitarkumarai_db_user:DogyJwcoGoBsPmgV@cluster0.iq4gpaf.mongodb.net/indistay?retryWrites=true&w=majority';
-
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  const uri = process.env.MONGODB_URI || FALLBACK_MONGODB_URI;
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    throw new Error(
+      '[IndiStay DB] Please define the MONGODB_URI environment variable inside .env.local or production settings.'
+    );
+  }
 
   if (cached!.conn) {
     return cached!.conn;

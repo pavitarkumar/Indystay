@@ -19,7 +19,12 @@ import { calculateBookingPrice } from '../src/utils/pricing';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/indistay';
 
 async function seed() {
-  console.log('Connecting to MongoDB at:', MONGODB_URI);
+  if (process.env.NODE_ENV === 'production' && process.env.FORCE_SEED !== 'true') {
+    console.error('❌ SAFETY ABORT: Cannot run seed script in production without FORCE_SEED=true! This prevents accidental data loss.');
+    process.exit(1);
+  }
+
+  console.log('Connecting to MongoDB at:', MONGODB_URI.replace(/:([^:@]+)@/, ':****@'));
   await mongoose.connect(MONGODB_URI);
   console.log('Connected to MongoDB.');
 

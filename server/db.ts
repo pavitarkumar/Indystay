@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-const FALLBACK_MONGODB_URI =
-  'mongodb+srv://pavitarkumarai_db_user:DogyJwcoGoBsPmgV@cluster0.iq4gpaf.mongodb.net/indistay?retryWrites=true&w=majority';
-
 let isConnected = false;
 
 export async function connectBackendDatabase(): Promise<typeof mongoose> {
@@ -10,7 +7,12 @@ export async function connectBackendDatabase(): Promise<typeof mongoose> {
     return mongoose;
   }
 
-  const uri = process.env.MONGODB_URI || FALLBACK_MONGODB_URI;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error(
+      '[IndiStay DB] Missing MONGODB_URI environment variable. Please configure it in .env or Render dashboard.'
+    );
+  }
 
   try {
     const conn = await mongoose.connect(uri, {
