@@ -16,10 +16,13 @@ import {
   Building,
   Star,
   DoorOpen,
+  FileText,
+  Printer,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { BookingVoucherModal } from '@/components/bookings/BookingVoucherModal';
 
 interface BookingDetail {
   _id: string;
@@ -79,6 +82,7 @@ export default function BookingDetailPage() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('Change of travel schedule');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [voucherModalOpen, setVoucherModalOpen] = useState(false);
 
   // Review modal
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -240,7 +244,19 @@ export default function BookingDetailPage() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {booking.bookingStatus !== 'CANCELLED' && booking.bookingStatus !== 'REJECTED' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVoucherModalOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50/80 cursor-pointer shadow-2xs"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Stay Voucher &amp; Receipt</span>
+              </Button>
+            )}
+
             {['PENDING', 'ACCEPTED'].includes(booking.bookingStatus) && (
               <Button variant="outline" size="sm" onClick={() => setCancelModalOpen(true)}>
                 Cancel Booking
@@ -544,6 +560,47 @@ export default function BookingDetailPage() {
           </form>
         )}
       </Modal>
+
+      {/* Official Printable Stay Voucher & Receipt Modal */}
+      {booking && (
+        <BookingVoucherModal
+          isOpen={voucherModalOpen}
+          onClose={() => setVoucherModalOpen(false)}
+          booking={{
+            _id: booking._id,
+            bookingReference: booking.bookingReference,
+            bookingStatus: booking.bookingStatus,
+            paymentStatus: booking.paymentStatus,
+            checkInDate: booking.checkInDate,
+            checkOutDate: booking.checkOutDate,
+            numberOfRooms: booking.numberOfRooms,
+            adults: booking.adults,
+            children: booking.children,
+            priceBreakdown: booking.priceBreakdown,
+            currency: booking.currency,
+            hotel: {
+              name: booking.hotelId?.name || 'IndiStay Partner Hotel',
+              address: booking.hotelId?.address,
+              locality: booking.hotelId?.locality,
+              city: booking.hotelId?.city || 'India',
+              phone: booking.hotelId?.contactInformation?.phone,
+              email: booking.hotelId?.contactInformation?.email,
+            },
+            roomType: {
+              name: booking.roomTypeId?.name || 'Standard Room',
+              bedConfiguration: booking.roomTypeId?.bedConfiguration,
+            },
+            allocatedRooms: booking.assignedPhysicalRoomIds?.map((r) => r.roomNumber) || [],
+            guest: {
+              fullName: booking.guestDetails?.fullName || 'Valued Guest',
+              email: booking.guestDetails?.email || '',
+              phone: booking.guestDetails?.phone || '',
+              specialRequests: booking.guestDetails?.specialRequests,
+            },
+            createdAt: booking.createdAt,
+          }}
+        />
+      )}
     </div>
   );
 }

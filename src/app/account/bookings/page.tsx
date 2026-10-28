@@ -28,21 +28,31 @@ import {
   MessageSquare,
   HelpCircle,
   ExternalLink,
+  FileText,
+  Printer,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoyaltyWheel } from '@/components/loyalty/LoyaltyWheel';
+import { BookingVoucherModal } from '@/components/bookings/BookingVoucherModal';
 
 interface BookingItem {
   _id: string;
   bookingReference: string;
   bookingStatus: string;
+  paymentStatus?: string;
   checkInDate: string;
   checkOutDate: string;
   numberOfRooms: number;
+  adults?: number;
+  children?: number;
   priceBreakdown: {
+    baseTotal?: number;
+    taxesAndFees?: number;
     totalPrice: number;
   };
+  advancePaymentAmount?: number;
+  balanceDueAtHotel?: number;
   appliedLoyaltyFreeNight?: boolean;
   loyaltyDiscountAmount?: number;
   hotelId: {
@@ -50,16 +60,25 @@ interface BookingItem {
     name: string;
     city: string;
     slug?: string;
+    address?: string;
+    locality?: string;
     coverImage?: { url: string };
   };
   roomTypeId: {
     name: string;
+    bedConfiguration?: string;
   };
   assignedPhysicalRoomIds?: Array<{
     _id: string;
     roomNumber: string;
     floor: number;
   }>;
+  guestDetails?: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  createdAt?: string;
 }
 
 interface LoyaltyData {
@@ -101,6 +120,7 @@ function BookingsHubContent() {
   const [copiedId, setCopiedId] = useState(false);
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [showQaTools, setShowQaTools] = useState(false);
+  const [selectedVoucherBooking, setSelectedVoucherBooking] = useState<BookingItem | null>(null);
 
   // Sync tab with URL
   useEffect(() => {
@@ -567,7 +587,20 @@ function BookingsHubContent() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {b.bookingStatus !== 'CANCELLED' && b.bookingStatus !== 'REJECTED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedVoucherBooking(b)}
+                            className="rounded-xl font-bold text-xs flex items-center gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                            title="Print or Save Official Stay Voucher"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Voucher</span>
+                          </Button>
+                        )}
+
                         <Link href={`/booking/${b._id}`}>
                           <Button
                             variant="primary"
@@ -855,6 +888,49 @@ function BookingsHubContent() {
           </div>
         )}
       </div>
+
+      {/* Official Printable Stay Voucher & Receipt Modal */}
+      {selectedVoucherBooking && (
+        <BookingVoucherModal
+          isOpen={!!selectedVoucherBooking}
+          onClose={() => setSelectedVoucherBooking(null)}
+          booking={{
+            _id: selectedVoucherBooking._id,
+            bookingReference: selectedVoucherBooking.bookingReference,
+            bookingStatus: selectedVoucherBooking.bookingStatus,
+            paymentStatus: selectedVoucherBooking.paymentStatus,
+            checkInDate: selectedVoucherBooking.checkInDate,
+            checkOutDate: selectedVoucherBooking.checkOutDate,
+            numberOfRooms: selectedVoucherBooking.numberOfRooms,
+            adults: selectedVoucherBooking.adults || 2,
+            children: selectedVoucherBooking.children || 0,
+            priceBreakdown: selectedVoucherBooking.priceBreakdown,
+            advancePaymentAmount: selectedVoucherBooking.advancePaymentAmount,
+            balanceDueAtHotel: selectedVoucherBooking.balanceDueAtHotel,
+            appliedLoyaltyFreeNight: selectedVoucherBooking.appliedLoyaltyFreeNight,
+            loyaltyDiscountAmount: selectedVoucherBooking.loyaltyDiscountAmount,
+            hotel: {
+              name: selectedVoucherBooking.hotelId?.name || 'IndiStay Partner Hotel',
+              address: selectedVoucherBooking.hotelId?.address,
+              locality: selectedVoucherBooking.hotelId?.locality,
+              city: selectedVoucherBooking.hotelId?.city || 'India',
+            },
+            roomType: {
+              name: selectedVoucherBooking.roomTypeId?.name || 'Deluxe Room',
+              bedConfiguration: selectedVoucherBooking.roomTypeId?.bedConfiguration,
+            },
+            allocatedRooms:
+              selectedVoucherBooking.assignedPhysicalRoomIds?.map((r) => r.roomNumber) || [],
+            guest: {
+              fullName:
+                selectedVoucherBooking.guestDetails?.fullName || user?.name || 'Valued Guest',
+              email: selectedVoucherBooking.guestDetails?.email || user?.email || '',
+              phone: selectedVoucherBooking.guestDetails?.phone || user?.phone || '',
+            },
+            createdAt: selectedVoucherBooking.createdAt,
+          }}
+        />
+      )}
     </div>
   );
 }
