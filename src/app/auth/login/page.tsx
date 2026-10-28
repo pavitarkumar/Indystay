@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Hotel, Mail, Lock, ArrowRight, ShieldCheck, Building2, User } from 'lucide-react';
+import { Hotel, Mail, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
@@ -49,11 +49,6 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillQuickAccount = (e: string, p: string) => {
-    setEmail(e);
-    setPassword(p);
   };
 
   return (
@@ -118,41 +113,6 @@ function LoginForm() {
           <ArrowRight className="w-4 h-4 ml-1.5" />
         </Button>
       </form>
-
-      {/* Quick Testing Credentials helper */}
-      <div className="mt-8 pt-6 border-t border-slate-100">
-        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">
-          Quick Test Accounts (Click to Fill)
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => fillQuickAccount('admin@indistay.com', 'IndiStayAdmin#2026!')}
-            className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold text-center border border-purple-200 transition-colors flex flex-col items-center gap-1 cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Super Admin</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => fillQuickAccount('goa.admin@indistay.com', 'IndiStay#2026')}
-            className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold text-center border border-indigo-200 transition-colors flex flex-col items-center gap-1 cursor-pointer"
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Hotel Admin</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => fillQuickAccount('rahul.sharma@example.com', 'IndiStay#2026')}
-            className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold text-center border border-emerald-200 transition-colors flex flex-col items-center gap-1 cursor-pointer"
-          >
-            <User className="w-4 h-4" />
-            <span>Customer</span>
-          </button>
-        </div>
-      </div>
 
       <div className="mt-6 text-center text-xs text-slate-500">
         Don&apos;t have an account?{' '}
