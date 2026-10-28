@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
           (ra) => ra.basePrice
         );
 
-        const startingPrice = activePrices.length > 0 ? Math.min(...activePrices) : 3500;
+        const startingPrice = activePrices.length > 0 ? Math.min(...activePrices) : 1450;
 
         // Price filter
         if (minPrice !== undefined && startingPrice < minPrice) return null;

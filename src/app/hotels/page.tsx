@@ -76,7 +76,7 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
         const prices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
           (ra) => ra.basePrice
         );
-        const startingPrice = prices.length > 0 ? Math.min(...prices) : 3500;
+        const startingPrice = prices.length > 0 ? Math.min(...prices) : 1450;
 
         return {
           _id: h._id.toString(),
