@@ -126,7 +126,9 @@ const HotelSchema = new Schema<IHotel>(
   }
 );
 
-// Compound index for public search
+// Compound indexes for public search & location filtering
 HotelSchema.index({ verificationStatus: 1, listingStatus: 1, city: 1 });
+HotelSchema.index({ verificationStatus: 1, listingStatus: 1, state: 1 });
+HotelSchema.index({ verificationStatus: 1, listingStatus: 1, locality: 1 });
 
 export const Hotel: Model<IHotel> = mongoose.models.Hotel || mongoose.model<IHotel>('Hotel', HotelSchema);

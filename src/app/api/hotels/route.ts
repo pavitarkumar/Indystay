@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth/session';
 import { requireRole } from '@/lib/auth/rbac';
 import { createHotelSchema, searchHotelsSchema } from '@/lib/validation/hotel.schema';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
+import { buildLocationSearchFilter, rankHotelsBySearchRelevance } from '@/lib/search/locationFilter';
 import { createNotification } from '@/lib/notifications/notification.service';
 import { createAuditLog } from '@/lib/audit/audit.service';
 
@@ -41,19 +42,13 @@ export async function GET(req: NextRequest) {
     } = parsed.data;
 
     // Base filter: only public, approved, published properties
+    const locationSearch = buildLocationSearchFilter(city);
+
     const filter: Record<string, unknown> = {
       verificationStatus: 'APPROVED',
       listingStatus: 'PUBLISHED',
+      ...locationSearch.filter,
     };
-
-    if (city && city.trim() !== '') {
-      filter.$or = [
-        { city: { $regex: new RegExp(city.trim(), 'i') } },
-        { state: { $regex: new RegExp(city.trim(), 'i') } },
-        { locality: { $regex: new RegExp(city.trim(), 'i') } },
-        { name: { $regex: new RegExp(city.trim(), 'i') } },
-      ];
-    }
 
     if (propertyType && propertyType !== 'ALL') {
       filter.propertyType = propertyType;
@@ -69,48 +64,55 @@ export async function GET(req: NextRequest) {
     // Query hotels
     const hotels = await Hotel.find(filter).lean();
 
-    // Enrich hotels with room type pricing and real-time availability
-    const enrichedHotels = [];
-
-    for (const hotel of hotels) {
-      const roomAvailability = await getHotelRoomTypesAvailability(
-        hotel._id,
-        checkIn,
-        checkOut
-      );
-
-      // Filter room types matching occupancy requirements
-      const eligibleRooms = roomAvailability.filter(
-        (ra) => ra.roomType.maxOccupancy * rooms >= guests
-      );
-
-      // If dates were provided, hotel must have at least one room type with available rooms >= requested rooms
-      if (checkIn && checkOut) {
-        const hasAvailability = eligibleRooms.some(
-          (ra) => ra.availableRoomsCount >= rooms
-        );
-        if (!hasAvailability) {
-          continue; // Exclude sold-out hotels for given dates
+    // Concurrent high-speed enrichment with room type pricing and real-time availability
+    const enrichedResults = await Promise.all(
+      hotels.map(async (hotel) => {
+        let roomAvailability: any[] = [];
+        try {
+          roomAvailability = await getHotelRoomTypesAvailability(
+            hotel._id,
+            checkIn,
+            checkOut
+          );
+        } catch {
+          roomAvailability = [];
         }
-      }
 
-      const activePrices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
-        (ra) => ra.basePrice
-      );
+        // Filter room types matching occupancy requirements
+        const eligibleRooms = roomAvailability.filter(
+          (ra) => ra.roomType.maxOccupancy * rooms >= guests
+        );
 
-      const startingPrice = activePrices.length > 0 ? Math.min(...activePrices) : 0;
+        // If dates were provided, hotel must have at least one room type with available rooms >= requested rooms
+        if (checkIn && checkOut) {
+          const hasAvailability = eligibleRooms.some(
+            (ra) => ra.availableRoomsCount >= rooms
+          );
+          if (!hasAvailability) {
+            return null; // Exclude sold-out hotels for given dates
+          }
+        }
 
-      // Price filter
-      if (minPrice !== undefined && startingPrice < minPrice) continue;
-      if (maxPrice !== undefined && startingPrice > maxPrice) continue;
+        const activePrices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
+          (ra) => ra.basePrice
+        );
 
-      enrichedHotels.push({
-        ...hotel,
-        startingPrice,
-        roomTypesCount: roomAvailability.length,
-        isAvailable: checkIn && checkOut ? eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms) : true,
-      });
-    }
+        const startingPrice = activePrices.length > 0 ? Math.min(...activePrices) : 3500;
+
+        // Price filter
+        if (minPrice !== undefined && startingPrice < minPrice) return null;
+        if (maxPrice !== undefined && startingPrice > maxPrice) return null;
+
+        return {
+          ...hotel,
+          startingPrice,
+          roomTypesCount: roomAvailability.length,
+          isAvailable: checkIn && checkOut ? eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms) : true,
+        };
+      })
+    );
+
+    let enrichedHotels = enrichedResults.filter(Boolean) as any[];
 
     // Sort hotels
     if (sortBy === 'price_asc') {
@@ -119,6 +121,9 @@ export async function GET(req: NextRequest) {
       enrichedHotels.sort((a, b) => b.startingPrice - a.startingPrice);
     } else if (sortBy === 'rating') {
       enrichedHotels.sort((a, b) => (b.ratingAverage || 0) - (a.ratingAverage || 0));
+    } else {
+      // Default: Rank by relevance to city/destination query
+      enrichedHotels = rankHotelsBySearchRelevance(enrichedHotels, city);
     }
 
     // Pagination

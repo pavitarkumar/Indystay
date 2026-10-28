@@ -5,6 +5,7 @@ import { HotelCard, HotelCardData } from '@/components/hotels/HotelCard';
 import { connectToDatabase } from '@/lib/db/connection';
 import { Hotel } from '@/models/Hotel';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
+import { buildLocationSearchFilter, rankHotelsBySearchRelevance } from '@/lib/search/locationFilter';
 import { Building2, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,6 +36,7 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
   const sortBy = params.sortBy || 'recommended';
 
   const hotels: HotelCardData[] = [];
+  const locationSearch = buildLocationSearchFilter(city);
 
   try {
     await connectToDatabase();
@@ -42,16 +44,8 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
     const filter: Record<string, unknown> = {
       verificationStatus: 'APPROVED',
       listingStatus: 'PUBLISHED',
+      ...locationSearch.filter,
     };
-
-    if (city.trim() !== '') {
-      filter.$or = [
-        { city: { $regex: new RegExp(city.trim(), 'i') } },
-        { state: { $regex: new RegExp(city.trim(), 'i') } },
-        { locality: { $regex: new RegExp(city.trim(), 'i') } },
-        { name: { $regex: new RegExp(city.trim(), 'i') } },
-      ];
-    }
 
     if (propertyType !== 'ALL') {
       filter.propertyType = propertyType;
@@ -59,44 +53,49 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
 
     const rawHotels = await Hotel.find(filter).lean();
 
-    for (const h of rawHotels) {
-      let eligibleRooms: any[] = [];
-      let roomAvailability: any[] = [];
-      try {
-        roomAvailability = await getHotelRoomTypesAvailability(h._id, checkIn, checkOut);
-        eligibleRooms = roomAvailability.filter(
-          (ra) => ra.roomType.maxOccupancy * rooms >= guests
+    // High performance concurrent availability and price enrichment
+    const enrichedHotels = await Promise.all(
+      rawHotels.map(async (h) => {
+        let eligibleRooms: any[] = [];
+        let roomAvailability: any[] = [];
+        try {
+          roomAvailability = await getHotelRoomTypesAvailability(h._id, checkIn, checkOut);
+          eligibleRooms = roomAvailability.filter(
+            (ra) => ra.roomType.maxOccupancy * rooms >= guests
+          );
+        } catch {
+          eligibleRooms = [];
+        }
+
+        let isAvailable = true;
+        if (checkIn && checkOut && eligibleRooms.length > 0) {
+          isAvailable = eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms);
+        }
+
+        const prices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
+          (ra) => ra.basePrice
         );
-      } catch {
-        eligibleRooms = [];
-      }
+        const startingPrice = prices.length > 0 ? Math.min(...prices) : 3500;
 
-      let isAvailable = true;
-      if (checkIn && checkOut && eligibleRooms.length > 0) {
-        isAvailable = eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms);
-      }
+        return {
+          _id: h._id.toString(),
+          name: h.name,
+          slug: h.slug,
+          city: h.city,
+          state: h.state,
+          locality: h.locality,
+          propertyType: h.propertyType,
+          amenities: h.amenities || [],
+          startingPrice,
+          coverImage: h.coverImage,
+          ratingAverage: h.ratingAverage,
+          ratingCount: h.ratingCount,
+          isAvailable,
+        };
+      })
+    );
 
-      const prices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
-        (ra) => ra.basePrice
-      );
-      const startingPrice = prices.length > 0 ? Math.min(...prices) : 3500;
-
-      hotels.push({
-        _id: h._id.toString(),
-        name: h.name,
-        slug: h.slug,
-        city: h.city,
-        state: h.state,
-        locality: h.locality,
-        propertyType: h.propertyType,
-        amenities: h.amenities || [],
-        startingPrice,
-        coverImage: h.coverImage,
-        ratingAverage: h.ratingAverage,
-        ratingCount: h.ratingCount,
-        isAvailable,
-      });
-    }
+    hotels.push(...enrichedHotels);
   } catch (err) {
     console.warn('[IndiStay Hotels] Query fallback notice:', err instanceof Error ? err.message : err);
   }
@@ -108,6 +107,11 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
     hotels.sort((a, b) => b.startingPrice - a.startingPrice);
   } else if (sortBy === 'rating') {
     hotels.sort((a, b) => (b.ratingAverage || 0) - (a.ratingAverage || 0));
+  } else {
+    // Default: Sort by relevance to user query (exact city/locality matches first)
+    const ranked = rankHotelsBySearchRelevance(hotels, city);
+    hotels.length = 0;
+    hotels.push(...ranked);
   }
 
   return (
@@ -128,7 +132,11 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            {city ? `Hotels & Stays in ${city}` : 'All Verified Properties'}
+            {locationSearch.primaryDisplayCity
+              ? `Hotels & Stays in ${locationSearch.primaryDisplayCity}`
+              : city
+              ? `Hotels & Stays in ${city}`
+              : 'All Verified Properties'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Found {hotels.length} verified {hotels.length === 1 ? 'property' : 'properties'}
