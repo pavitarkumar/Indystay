@@ -111,7 +111,7 @@ export function buildLocationSearchFilter(cityQuery?: string): LocationSearchRes
 export function rankHotelsBySearchRelevance<
   T extends { city?: string; locality?: string; name?: string; state?: string }
 >(hotels: T[], cityQuery?: string): T[] {
-  if (!cityQuery || hotels.length <= 1) return hotels;
+  if (!cityQuery || hotels.length <= 1) return [...hotels];
 
   const rawLower = cityQuery.trim().toLowerCase();
 

@@ -35,6 +35,19 @@ interface HotelSearchBarProps {
   compact?: boolean;
 }
 
+function safeNormalizeDate(val?: string): string {
+  if (!val) return '';
+  const str = String(val).trim();
+  const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, '0');
+    const month = dmyMatch[2].padStart(2, '0');
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  return str;
+}
+
 export function HotelSearchBar({
   initialCity = '',
   initialCheckIn = '',
@@ -55,8 +68,8 @@ export function HotelSearchBar({
     .split('T')[0];
 
   const [city, setCity] = useState(initialCity);
-  const [checkIn, setCheckIn] = useState(normalizeDateString(initialCheckIn) || initialCheckIn || defCheckIn);
-  const [checkOut, setCheckOut] = useState(normalizeDateString(initialCheckOut) || initialCheckOut || defCheckOut);
+  const [checkIn, setCheckIn] = useState(safeNormalizeDate(initialCheckIn) || defCheckIn);
+  const [checkOut, setCheckOut] = useState(safeNormalizeDate(initialCheckOut) || defCheckOut);
   const [guests, setGuests] = useState(initialGuests);
   const [rooms, setRooms] = useState(initialRooms);
 

@@ -36,7 +36,7 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
   const propertyType = params.propertyType || 'ALL';
   const sortBy = params.sortBy || 'recommended';
 
-  const hotels: HotelCardData[] = [];
+  let hotels: HotelCardData[] = [];
   const locationSearch = buildLocationSearchFilter(city);
 
   try {
@@ -96,7 +96,7 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
       })
     );
 
-    hotels.push(...enrichedHotels);
+    hotels = enrichedHotels;
   } catch (err) {
     console.warn('[IndiStay Hotels] Query fallback notice:', err instanceof Error ? err.message : err);
   }
@@ -110,9 +110,7 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
     hotels.sort((a, b) => (b.ratingAverage || 0) - (a.ratingAverage || 0));
   } else {
     // Default: Sort by relevance to user query (exact city/locality matches first)
-    const ranked = rankHotelsBySearchRelevance(hotels, city);
-    hotels.length = 0;
-    hotels.push(...ranked);
+    hotels = rankHotelsBySearchRelevance(hotels, city);
   }
 
   return (
