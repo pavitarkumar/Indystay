@@ -2,8 +2,22 @@
 
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Hotel, Mail, Lock, ArrowRight } from 'lucide-react';
+import {
+  Hotel,
+  Mail,
+  Lock,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ShieldCheck,
+  Star,
+  Building2,
+  UserCheck,
+  CheckCircle2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function LoginForm() {
@@ -13,8 +27,27 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'CUSTOMER' | 'HOTEL_ADMIN' | 'SUPER_ADMIN'>('CUSTOMER');
+
+  // Quick Demo Autofill Helper for Testing
+  const handleQuickFill = (role: 'CUSTOMER' | 'HOTEL_ADMIN' | 'SUPER_ADMIN') => {
+    setSelectedRole(role);
+    setError('');
+    if (role === 'SUPER_ADMIN') {
+      setEmail('admin@indistay.com');
+      setPassword('IndiStayAdmin#2026!');
+    } else if (role === 'HOTEL_ADMIN') {
+      setEmail('hotel.admin@example.com');
+      setPassword('Password#123');
+    } else {
+      setEmail('');
+      setPassword('');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,73 +85,246 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl border border-slate-200/90">
-      <div className="text-center mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white mx-auto mb-4 shadow-md shadow-indigo-600/30">
-          <Hotel className="w-6 h-6" />
+    <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+      {/* Left Column: Visual Showcase (Visible on Large Screens) */}
+      <div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-10 text-white bg-slate-900 overflow-hidden">
+        {/* Background Image with Ambient Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80"
+            alt="IndiStay Luxury Palace"
+            fill
+            className="object-cover opacity-60 scale-105 transform hover:scale-110 transition-transform duration-1000"
+            sizes="(max-width: 1024px) 100vw, 45vw"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40" />
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Sign in to IndiStay</h1>
-        <p className="text-xs text-slate-500 mt-1">Access your bookings or hotel management console</p>
+
+        {/* Brand Header */}
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide text-white mb-6">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>The Premier Indian Hospitality Network</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+              <Hotel className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight text-white">IndiStay</h2>
+              <p className="text-xs text-indigo-200">Handpicked Stays &amp; Verified Comfort</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Highlights & Testimonial */}
+        <div className="relative z-10 space-y-6 my-auto pt-8">
+          <div>
+            <div className="flex items-center gap-1 text-amber-400 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-4 h-4 fill-amber-400" />
+              ))}
+              <span className="text-xs font-bold text-white ml-2">4.9 / 5 Guest Rating</span>
+            </div>
+            <h3 className="text-2xl font-bold leading-snug tracking-tight text-white">
+              Discover authentic luxury across 40+ destinations in India.
+            </h3>
+          </div>
+
+          <div className="space-y-3 text-xs text-slate-300">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>100% Verified physical rooms with real-time availability</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Direct hotel-to-guest messaging &amp; 24/7 concierge support</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Earn free nights with IndiStay Loyalty Rewards</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Security & Authenticity Footer */}
+        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-indigo-400" />
+            <span>256-Bit SSL Encrypted</span>
+          </div>
+          <span>ISO 27001 Certified Security</span>
+        </div>
       </div>
 
-      {error && (
-        <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            Email Address
-          </label>
-          <div className="relative">
-            <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-            <input
-              type="email"
-              required
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all font-medium"
-            />
+      {/* Right Column: Authentication Form */}
+      <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
+        {/* Mobile Brand Header */}
+        <div className="flex lg:hidden items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
+            <Hotel className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">IndiStay</h2>
+            <p className="text-xs text-slate-500">Luxury Indian Hospitality</p>
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-            Password
+        {/* Form Title & Greeting */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Welcome Back
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
+            Enter your credentials to access your bookings or hotel management console.
+          </p>
+        </div>
+
+        {/* Quick Role Autofill Selector */}
+        <div className="mb-6">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+            Select Account Role
           </label>
-          <div className="relative">
-            <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all font-medium"
-            />
+          <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => handleQuickFill('CUSTOMER')}
+              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                selectedRole === 'CUSTOMER'
+                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Traveller</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickFill('HOTEL_ADMIN')}
+              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                selectedRole === 'HOTEL_ADMIN'
+                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Hotel Admin</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickFill('SUPER_ADMIN')}
+              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                selectedRole === 'SUPER_ADMIN'
+                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Super Admin</span>
+            </button>
           </div>
         </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          isLoading={loading}
-          className="w-full font-bold shadow-md shadow-indigo-600/20 mt-2"
-        >
-          <span>Sign In</span>
-          <ArrowRight className="w-4 h-4 ml-1.5" />
-        </Button>
-      </form>
+        {/* Error Notification */}
+        {error && (
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
 
-      <div className="mt-6 text-center text-xs text-slate-500">
-        Don&apos;t have an account?{' '}
-        <Link href="/auth/register" className="font-bold text-indigo-600 hover:text-indigo-800">
-          Create account
-        </Link>
+        {/* Form Inputs */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <input
+                type="email"
+                required
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all font-medium bg-slate-50/50 hover:bg-white focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Password
+              </label>
+              <a
+                href="mailto:support@indistay.com?subject=Password%20Reset%20Request"
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                Forgot password?
+              </a>
+            </div>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-11 py-3 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all font-medium bg-slate-50/50 hover:bg-white focus:bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 accent-indigo-600 cursor-pointer"
+              />
+              <span className="text-xs font-medium text-slate-600">Remember this device</span>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            isLoading={loading}
+            className="w-full font-bold shadow-lg shadow-indigo-600/25 py-3.5 rounded-xl transition-all mt-3 cursor-pointer"
+          >
+            <span>Sign In to Account</span>
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </form>
+
+        {/* Switch to Register */}
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
+          Don&apos;t have an IndiStay account yet?{' '}
+          <Link
+            href="/auth/register"
+            className="font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            Create account
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -126,8 +332,12 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[80vh] flex flex-col justify-center items-center px-4 py-12">
-      <Suspense fallback={<div className="text-xs text-slate-400">Loading sign in...</div>}>
+    <div className="min-h-[85vh] flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative overflow-hidden bg-gradient-to-b from-slate-50 via-slate-100/60 to-white">
+      {/* Decorative ambient gradient orbs */}
+      <div className="absolute top-10 left-1/4 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl pointer-events-none" />
+
+      <Suspense fallback={<div className="text-xs text-slate-400 font-medium">Loading sign in portal...</div>}>
         <LoginForm />
       </Suspense>
     </div>
