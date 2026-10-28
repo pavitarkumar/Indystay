@@ -36,6 +36,12 @@ export async function GET() {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        loyalty: user.loyalty || {
+          completedBookingsCount: 0,
+          freeNightsAvailable: 0,
+          totalRewardsClaimed: 0,
+        },
+        createdAt: user.createdAt,
         assignedHotelId: assignedHotel?._id?.toString() || user.assignedHotelId?.toString() || null,
         assignedHotel,
       },
