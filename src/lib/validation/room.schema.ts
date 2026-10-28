@@ -32,12 +32,32 @@ export const createPhysicalRoomSchema = z.object({
   operationalStatus: z.enum(['AVAILABLE', 'MAINTENANCE', 'OUT_OF_SERVICE']).default('AVAILABLE'),
   housekeepingStatus: z.enum(['CLEAN', 'DIRTY', 'CLEANING', 'INSPECTED']).default('CLEAN'),
   notes: z.string().optional(),
+  images: z
+    .array(
+      z.object({
+        url: z.string().url('Invalid image URL'),
+        caption: z.string().optional(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export const updatePhysicalRoomSchema = z.object({
+  roomNumber: z.string().min(1).max(20).optional(),
+  floor: z.coerce.number().int().optional(),
+  roomTypeId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
   operationalStatus: z.enum(['AVAILABLE', 'MAINTENANCE', 'OUT_OF_SERVICE']).optional(),
   housekeepingStatus: z.enum(['CLEAN', 'DIRTY', 'CLEANING', 'INSPECTED']).optional(),
   notes: z.string().optional(),
+  images: z
+    .array(
+      z.object({
+        url: z.string().url('Invalid image URL'),
+        caption: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export type CreateRoomTypeInput = z.infer<typeof createRoomTypeSchema>;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   Bed,
   DoorOpen,
@@ -18,6 +19,10 @@ import {
   Mail,
   FileText,
   AlertTriangle,
+  Camera,
+  Upload,
+  Image as ImageIcon,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +53,7 @@ interface PhysicalRoom {
   operationalStatus: 'AVAILABLE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
   housekeepingStatus: 'CLEAN' | 'DIRTY' | 'CLEANING' | 'INSPECTED';
   notes?: string;
+  images?: Array<{ url: string; caption?: string }>;
 }
 
 interface RoomBookingItem {
@@ -120,6 +126,11 @@ export default function HotelAdminRoomsPage() {
   const [rOperationalStatus, setROperationalStatus] = useState<'AVAILABLE' | 'MAINTENANCE' | 'OUT_OF_SERVICE'>('AVAILABLE');
   const [rHousekeepingStatus, setRHousekeepingStatus] = useState<'CLEAN' | 'DIRTY' | 'CLEANING' | 'INSPECTED'>('CLEAN');
   const [rNotes, setRNotes] = useState('');
+  const [rImages, setRImages] = useState<Array<{ url: string; caption?: string }>>([]);
+  const [rUploadingImage, setRUploadingImage] = useState(false);
+  const [rNewImageUrl, setRNewImageUrl] = useState('');
+  const [rNewImageCaption, setRNewImageCaption] = useState('');
+  const [rImageTab, setRImageTab] = useState<'upload' | 'url'>('upload');
   const [isSavingRoom, setIsSavingRoom] = useState(false);
   const [roomModalError, setRoomModalError] = useState('');
 
@@ -282,12 +293,83 @@ export default function HotelAdminRoomsPage() {
     }
   };
 
-  // --- PHYSICAL ROOM HANDLERS ---
+  // --- PHYSICAL ROOM HANDLERS & IMAGE MANAGEMENT ---
+  const handleUploadRoomImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setRUploadingImage(true);
+    setRoomModalError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'indistay/rooms');
+
+      const res = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload room photo');
+      }
+
+      const cleanCaption = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setRImages((prev) => [
+        ...prev,
+        {
+          url: data.data.url,
+          caption: cleanCaption,
+        },
+      ]);
+    } catch (err) {
+      setRoomModalError(err instanceof Error ? err.message : 'Photo upload failed');
+    } finally {
+      setRUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAddImageUrl = () => {
+    if (!rNewImageUrl.trim()) return;
+    try {
+      new URL(rNewImageUrl.trim());
+    } catch {
+      setRoomModalError('Please enter a valid Image URL (e.g. https://...)');
+      return;
+    }
+
+    setRImages((prev) => [
+      ...prev,
+      {
+        url: rNewImageUrl.trim(),
+        caption: rNewImageCaption.trim() || undefined,
+      },
+    ]);
+    setRNewImageUrl('');
+    setRNewImageCaption('');
+  };
+
+  const handleRemoveRoomImage = (index: number) => {
+    setRImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateImageCaption = (index: number, caption: string) => {
+    setRImages((prev) =>
+      prev.map((img, i) => (i === index ? { ...img, caption } : img))
+    );
+  };
+
   const handleOpenAddPhysicalRoom = () => {
     setRNumber('');
     setRFloor(1);
     setRNotes('');
     setRTypeId(roomTypes[0]?._id || '');
+    setRImages([]);
+    setRNewImageUrl('');
+    setRNewImageCaption('');
+    setRImageTab('upload');
     setRoomModalError('');
     setIsAddRoomOpen(true);
   };
@@ -306,13 +388,14 @@ export default function HotelAdminRoomsPage() {
           roomNumber: rNumber.trim(),
           floor: rFloor,
           notes: rNotes,
+          images: rImages,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Failed to create room');
 
       setIsAddRoomOpen(false);
-      showSuccess(`Physical Room #${rNumber} created successfully!`);
+      showSuccess(`Physical Room #${rNumber} created successfully with ${rImages.length} photo(s)!`);
       loadData();
     } catch (err) {
       setRoomModalError(err instanceof Error ? err.message : 'Failed to create physical room');
@@ -330,6 +413,10 @@ export default function HotelAdminRoomsPage() {
     setROperationalStatus(room.operationalStatus);
     setRHousekeepingStatus(room.housekeepingStatus);
     setRNotes(room.notes || '');
+    setRImages(room.images && Array.isArray(room.images) ? [...room.images] : []);
+    setRNewImageUrl('');
+    setRNewImageCaption('');
+    setRImageTab('upload');
     setRoomModalError('');
     setIsEditRoomOpen(true);
   };
@@ -350,6 +437,7 @@ export default function HotelAdminRoomsPage() {
           operationalStatus: rOperationalStatus,
           housekeepingStatus: rHousekeepingStatus,
           notes: rNotes,
+          images: rImages,
         }),
       });
       const data = await res.json();
@@ -711,6 +799,21 @@ export default function HotelAdminRoomsPage() {
                             <span className="font-black text-slate-900 text-sm bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-100">
                               {r.roomNumber}
                             </span>
+                            {r.images && r.images.length > 0 ? (
+                              <div className="flex items-center gap-1.5" title={`${r.images.length} photo(s) uploaded for Room #${r.roomNumber}`}>
+                                <div className="relative w-6 h-6 rounded-md overflow-hidden border border-slate-200 shrink-0 bg-slate-100">
+                                  <Image src={r.images[0].url} alt={`Room ${r.roomNumber}`} fill className="object-cover" />
+                                </div>
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  <Camera className="w-3 h-3 text-emerald-600" />
+                                  <span>{r.images.length}</span>
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-normal">
+                                No photos
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3.5 px-5 text-slate-600">Floor {r.floor}</td>
@@ -1102,7 +1205,8 @@ export default function HotelAdminRoomsPage() {
         isOpen={isAddRoomOpen}
         onClose={() => setIsAddRoomOpen(false)}
         title="Add Physical Room Number"
-        description="Assign a specific room number (e.g. 101, 102) to a room type."
+        description="Assign a specific room number (e.g. 101, 102) to a room type, and attach actual room photos."
+        maxWidth="lg"
       >
         <form onSubmit={handleCreatePhysicalRoom} className="space-y-4">
           {roomModalError && (
@@ -1162,7 +1266,150 @@ export default function HotelAdminRoomsPage() {
             />
           </div>
 
-          <div className="flex gap-2 justify-end pt-3">
+          {/* Room Photography & Images */}
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Room Photos & Visual Gallery</span>
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  Upload or link authentic photos of this specific physical room.
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                {rImages.length} Photo{rImages.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Input Switch: Upload File vs Image URL */}
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <button
+                type="button"
+                onClick={() => setRImageTab('upload')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  rImageTab === 'upload'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Upload className="w-3 h-3" />
+                <span>Upload From Device</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRImageTab('url')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  rImageTab === 'url'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <LinkIcon className="w-3 h-3" />
+                <span>Add by URL</span>
+              </button>
+            </div>
+
+            {rImageTab === 'upload' ? (
+              <div className="p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                <input
+                  type="file"
+                  id="add-room-file-input"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleUploadRoomImage}
+                  disabled={rUploadingImage}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="add-room-file-input"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{rUploadingImage ? 'Uploading Room Photo...' : 'Choose Room Image File'}</span>
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1.5">
+                  Supports JPG, PNG, WEBP (Instant upload & cloud hosting)
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/photo-..."
+                    value={rNewImageUrl}
+                    onChange={(e) => setRNewImageUrl(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddImageUrl}
+                    className="text-xs shrink-0"
+                  >
+                    Add Photo
+                  </Button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Photo Caption (e.g. Master Bedroom & King Bed)"
+                  value={rNewImageCaption}
+                  onChange={(e) => setRNewImageCaption(e.target.value)}
+                  className="w-full px-3 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            )}
+
+            {/* Uploaded Photos Gallery Preview */}
+            {rImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {rImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex flex-col"
+                  >
+                    <div className="relative aspect-video w-full bg-slate-200">
+                      <Image
+                        src={img.url}
+                        alt={img.caption || `Room Photo ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRoomImage(idx)}
+                        className="absolute top-1.5 right-1.5 p-1 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 bg-slate-900/70 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">
+                        #{idx + 1}
+                      </span>
+                    </div>
+                    <div className="p-1.5 bg-white border-t border-slate-100">
+                      <input
+                        type="text"
+                        placeholder="Caption (e.g. Balcony View)"
+                        value={img.caption || ''}
+                        onChange={(e) => handleUpdateImageCaption(idx, e.target.value)}
+                        className="w-full text-[11px] px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <ImageIcon className="w-5 h-5 text-slate-300 mx-auto mb-1" />
+                <span>No photos added yet. Add photos to give guests a visual preview of Room #{rNumber || '___'}.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsAddRoomOpen(false)}>
               Cancel
             </Button>
@@ -1180,7 +1427,8 @@ export default function HotelAdminRoomsPage() {
         isOpen={isEditRoomOpen}
         onClose={() => setIsEditRoomOpen(false)}
         title={`Edit Room #${selectedRoom?.roomNumber}`}
-        description="Update room configuration, operational readiness, or housekeeping state."
+        description="Update room configuration, photography, operational readiness, or housekeeping state."
+        maxWidth="lg"
       >
         <form onSubmit={handleUpdateRoom} className="space-y-4">
           {roomModalError && (
@@ -1268,7 +1516,150 @@ export default function HotelAdminRoomsPage() {
             />
           </div>
 
-          <div className="flex gap-2 justify-end pt-3">
+          {/* Room Photography & Images */}
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Room Photos & Visual Gallery</span>
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  Upload or link authentic photos of this specific physical room.
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                {rImages.length} Photo{rImages.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Input Switch: Upload File vs Image URL */}
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <button
+                type="button"
+                onClick={() => setRImageTab('upload')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  rImageTab === 'upload'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Upload className="w-3 h-3" />
+                <span>Upload From Device</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRImageTab('url')}
+                className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  rImageTab === 'url'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <LinkIcon className="w-3 h-3" />
+                <span>Add by URL</span>
+              </button>
+            </div>
+
+            {rImageTab === 'upload' ? (
+              <div className="p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                <input
+                  type="file"
+                  id="edit-room-file-input"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleUploadRoomImage}
+                  disabled={rUploadingImage}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="edit-room-file-input"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{rUploadingImage ? 'Uploading Room Photo...' : 'Choose Room Image File'}</span>
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1.5">
+                  Supports JPG, PNG, WEBP (Instant upload & cloud hosting)
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/photo-..."
+                    value={rNewImageUrl}
+                    onChange={(e) => setRNewImageUrl(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                  />
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddImageUrl}
+                    className="text-xs shrink-0"
+                  >
+                    Add Photo
+                  </Button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Photo Caption (e.g. Master Bedroom & King Bed)"
+                  value={rNewImageCaption}
+                  onChange={(e) => setRNewImageCaption(e.target.value)}
+                  className="w-full px-3 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            )}
+
+            {/* Uploaded Photos Gallery Preview */}
+            {rImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {rImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex flex-col"
+                  >
+                    <div className="relative aspect-video w-full bg-slate-200">
+                      <Image
+                        src={img.url}
+                        alt={img.caption || `Room Photo ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRoomImage(idx)}
+                        className="absolute top-1.5 right-1.5 p-1 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg shadow-sm transition-colors cursor-pointer"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 bg-slate-900/70 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">
+                        #{idx + 1}
+                      </span>
+                    </div>
+                    <div className="p-1.5 bg-white border-t border-slate-100">
+                      <input
+                        type="text"
+                        placeholder="Caption (e.g. Balcony View)"
+                        value={img.caption || ''}
+                        onChange={(e) => handleUpdateImageCaption(idx, e.target.value)}
+                        className="w-full text-[11px] px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 focus:outline-none focus:bg-white focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <ImageIcon className="w-5 h-5 text-slate-300 mx-auto mb-1" />
+                <span>No photos attached to Room #{rNumber}. Add photos to showcase this specific room to guests.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
             <Button type="button" variant="outline" size="sm" onClick={() => setIsEditRoomOpen(false)}>
               Cancel
             </Button>

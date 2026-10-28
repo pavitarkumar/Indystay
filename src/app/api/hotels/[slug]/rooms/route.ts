@@ -103,6 +103,7 @@ export async function POST(
       operationalStatus: parsed.data.operationalStatus,
       housekeepingStatus: parsed.data.housekeepingStatus,
       notes: parsed.data.notes,
+      images: parsed.data.images || [],
     });
 
     return NextResponse.json({

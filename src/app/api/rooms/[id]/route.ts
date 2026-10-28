@@ -87,6 +87,9 @@ export async function PATCH(
     if (body.operationalStatus) room.operationalStatus = body.operationalStatus;
     if (body.housekeepingStatus) room.housekeepingStatus = body.housekeepingStatus;
     if (body.notes !== undefined) room.notes = body.notes;
+    if (body.images !== undefined && Array.isArray(body.images)) {
+      room.images = body.images;
+    }
 
     await room.save();
 
