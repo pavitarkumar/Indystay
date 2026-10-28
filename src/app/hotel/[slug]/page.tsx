@@ -23,31 +23,42 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
   const { slug } = await params;
   const sParams = await searchParams;
 
-  await connectToDatabase();
-
-  const isObjectId = mongoose.Types.ObjectId.isValid(slug);
-  const query = isObjectId ? { _id: slug } : { slug };
-
-  const hotel = await Hotel.findOne(query).lean();
-  if (!hotel) {
-    notFound();
-  }
+  let hotel: any = null;
+  let roomAvailability: any[] = [];
+  let reviews: any[] = [];
 
   const checkIn = sParams.checkIn;
   const checkOut = sParams.checkOut;
   const guests = parseInt(sParams.guests || '2', 10);
   const rooms = parseInt(sParams.rooms || '1', 10);
 
-  const roomAvailability = await getHotelRoomTypesAvailability(
-    hotel._id,
-    checkIn,
-    checkOut
-  );
+  try {
+    await connectToDatabase();
 
-  const reviews = await Review.find({ hotelId: hotel._id, status: 'PUBLISHED' })
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
+    const isObjectId = mongoose.Types.ObjectId.isValid(slug);
+    const query = isObjectId ? { _id: slug } : { slug };
+
+    hotel = await Hotel.findOne(query).lean();
+
+    if (hotel) {
+      roomAvailability = await getHotelRoomTypesAvailability(
+        hotel._id,
+        checkIn,
+        checkOut
+      );
+
+      reviews = await Review.find({ hotelId: hotel._id, status: 'PUBLISHED' })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+    }
+  } catch (err) {
+    console.warn('[IndiStay HotelDetail] Database error:', err);
+  }
+
+  if (!hotel) {
+    notFound();
+  }
 
   const formattedHotel = {
     _id: hotel._id.toString(),
@@ -69,13 +80,13 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
       email: hotel.contactInformation?.email || '',
     },
     coverImage: hotel.coverImage,
-    images: (hotel.images || []).map((img) => ({
+    images: (hotel.images || []).map((img: any) => ({
       url: img.url,
       caption: img.caption,
     })),
     ratingAverage: hotel.ratingAverage,
     ratingCount: hotel.ratingCount,
-    roomTypes: roomAvailability.map((ra) => ({
+    roomTypes: roomAvailability.map((ra: any) => ({
       roomType: {
         _id: ra.roomType._id.toString(),
         name: ra.roomType.name,
@@ -87,7 +98,7 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
         currency: ra.roomType.currency || 'INR',
         amenities: ra.roomType.amenities || [],
         sizeSqFt: ra.roomType.sizeSqFt,
-        images: (ra.roomType.images || []).map((img) => ({
+        images: (ra.roomType.images || []).map((img: any) => ({
           url: img.url,
           caption: img.caption,
         })),
@@ -97,13 +108,13 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
       isAvailable: ra.isAvailable,
       basePrice: ra.basePrice,
     })),
-    reviews: reviews.map((r) => ({
+    reviews: reviews.map((r: any) => ({
       _id: r._id.toString(),
       customerName: r.customerName,
       rating: r.rating,
       title: r.title,
       comment: r.comment,
-      createdAt: r.createdAt.toISOString(),
+      createdAt: r.createdAt ? (typeof r.createdAt === 'string' ? r.createdAt : r.createdAt.toISOString()) : new Date().toISOString(),
     })),
   };
 

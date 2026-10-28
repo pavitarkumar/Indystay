@@ -18,8 +18,11 @@ if (!cached) {
   cached = global.mongooseCache = { conn: null, promise: null };
 }
 
+const FALLBACK_MONGODB_URI =
+  'mongodb+srv://pavitarkumarai_db_user:DogyJwcoGoBsPmgV@cluster0.iq4gpaf.mongodb.net/indistay?retryWrites=true&w=majority';
+
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/indistay';
+  const uri = process.env.MONGODB_URI || FALLBACK_MONGODB_URI;
 
   if (cached!.conn) {
     return cached!.conn;

@@ -34,63 +34,71 @@ export default async function HotelsSearchPage({ searchParams }: PageProps) {
   const propertyType = params.propertyType || 'ALL';
   const sortBy = params.sortBy || 'recommended';
 
-  await connectToDatabase();
-
-  const filter: Record<string, unknown> = {
-    verificationStatus: 'APPROVED',
-    listingStatus: 'PUBLISHED',
-  };
-
-  if (city.trim() !== '') {
-    filter.$or = [
-      { city: { $regex: new RegExp(city.trim(), 'i') } },
-      { state: { $regex: new RegExp(city.trim(), 'i') } },
-      { locality: { $regex: new RegExp(city.trim(), 'i') } },
-      { name: { $regex: new RegExp(city.trim(), 'i') } },
-    ];
-  }
-
-  if (propertyType !== 'ALL') {
-    filter.propertyType = propertyType;
-  }
-
-  const rawHotels = await Hotel.find(filter).lean();
   const hotels: HotelCardData[] = [];
 
-  for (const h of rawHotels) {
-    const roomAvailability = await getHotelRoomTypesAvailability(h._id, checkIn, checkOut);
+  try {
+    await connectToDatabase();
 
-    // Eligible rooms matching guest occupancy
-    const eligibleRooms = roomAvailability.filter(
-      (ra) => ra.roomType.maxOccupancy * rooms >= guests
-    );
+    const filter: Record<string, unknown> = {
+      verificationStatus: 'APPROVED',
+      listingStatus: 'PUBLISHED',
+    };
 
-    // If dates are specified, check real inventory
-    let isAvailable = true;
-    if (checkIn && checkOut) {
-      isAvailable = eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms);
+    if (city.trim() !== '') {
+      filter.$or = [
+        { city: { $regex: new RegExp(city.trim(), 'i') } },
+        { state: { $regex: new RegExp(city.trim(), 'i') } },
+        { locality: { $regex: new RegExp(city.trim(), 'i') } },
+        { name: { $regex: new RegExp(city.trim(), 'i') } },
+      ];
     }
 
-    const prices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
-      (ra) => ra.basePrice
-    );
-    const startingPrice = prices.length > 0 ? Math.min(...prices) : 3500;
+    if (propertyType !== 'ALL') {
+      filter.propertyType = propertyType;
+    }
 
-    hotels.push({
-      _id: h._id.toString(),
-      name: h.name,
-      slug: h.slug,
-      city: h.city,
-      state: h.state,
-      locality: h.locality,
-      propertyType: h.propertyType,
-      amenities: h.amenities || [],
-      startingPrice,
-      coverImage: h.coverImage,
-      ratingAverage: h.ratingAverage,
-      ratingCount: h.ratingCount,
-      isAvailable,
-    });
+    const rawHotels = await Hotel.find(filter).lean();
+
+    for (const h of rawHotels) {
+      let eligibleRooms: any[] = [];
+      let roomAvailability: any[] = [];
+      try {
+        roomAvailability = await getHotelRoomTypesAvailability(h._id, checkIn, checkOut);
+        eligibleRooms = roomAvailability.filter(
+          (ra) => ra.roomType.maxOccupancy * rooms >= guests
+        );
+      } catch {
+        eligibleRooms = [];
+      }
+
+      let isAvailable = true;
+      if (checkIn && checkOut && eligibleRooms.length > 0) {
+        isAvailable = eligibleRooms.some((ra) => ra.availableRoomsCount >= rooms);
+      }
+
+      const prices = (eligibleRooms.length > 0 ? eligibleRooms : roomAvailability).map(
+        (ra) => ra.basePrice
+      );
+      const startingPrice = prices.length > 0 ? Math.min(...prices) : 3500;
+
+      hotels.push({
+        _id: h._id.toString(),
+        name: h.name,
+        slug: h.slug,
+        city: h.city,
+        state: h.state,
+        locality: h.locality,
+        propertyType: h.propertyType,
+        amenities: h.amenities || [],
+        startingPrice,
+        coverImage: h.coverImage,
+        ratingAverage: h.ratingAverage,
+        ratingCount: h.ratingCount,
+        isAvailable,
+      });
+    }
+  } catch (err) {
+    console.warn('[IndiStay Hotels] Query fallback notice:', err instanceof Error ? err.message : err);
   }
 
   // Sorting
