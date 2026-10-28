@@ -1,0 +1,31 @@
+# Render Blueprint Specification for IndiStay Dedicated Backend
+# Learn more: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: indystay-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start:backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://indystay.vercel.app,http://localhost:3000,http://localhost:3001
+      - key: APP_URL
+        value: https://indystay.vercel.app
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
