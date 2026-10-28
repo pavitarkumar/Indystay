@@ -1114,6 +1114,135 @@ export function HotelDetailView({
               </div>
             )}
 
+            {/* Physical Room Selection & Availability Grid */}
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <div>
+                  <label className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                    <DoorOpen className="w-4 h-4 text-indigo-600" />
+                    <span>Select Room Number</span>
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Choose your preferred room, or let the system auto-assign the best available room.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-semibold">
+                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Available ({availableRooms.filter((r) => r.isAvailable).length})
+                  </span>
+                  <span className="flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    Booked ({availableRooms.filter((r) => !r.isAvailable).length})
+                  </span>
+                </div>
+              </div>
+
+              {loadingRooms ? (
+                <div className="py-6 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                  <Clock className="w-5 h-5 animate-spin text-indigo-600" />
+                  <span>Checking real-time room availability for selected dates...</span>
+                </div>
+              ) : availableRooms.length === 0 ? (
+                <div className="p-3 bg-white rounded-xl border border-slate-200 text-center text-xs text-slate-500">
+                  No physical room numbers mapped. Your room will be allocated at the front desk upon check-in.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* Auto Assign Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPhysicalRoomId(null);
+                      setActivePhotoIndex(0);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedPhysicalRoomId === null
+                        ? 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
+                        : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span>Auto-Assign</span>
+                      {selectedPhysicalRoomId === null && (
+                        <Check className="w-3.5 h-3.5 text-indigo-600" />
+                      )}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">Best room chosen</div>
+                  </button>
+
+                  {/* Individual Physical Rooms */}
+                  {availableRooms.map((r) => {
+                    const isSelected = selectedPhysicalRoomId === r._id;
+                    return (
+                      <button
+                        key={r._id}
+                        type="button"
+                        disabled={!r.isAvailable}
+                        onClick={() => {
+                          setSelectedPhysicalRoomId(r._id);
+                          setActivePhotoIndex(0);
+                        }}
+                        title={r.statusMessage}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          !r.isAvailable
+                            ? 'bg-slate-100/90 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
+                            : isSelected
+                            ? 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500/20 text-indigo-950 font-bold cursor-pointer shadow-xs'
+                            : 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/20 text-slate-800 cursor-pointer'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className={!r.isAvailable ? 'line-through' : 'font-extrabold'}>
+                            Room #{r.roomNumber}
+                          </span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                        </div>
+                        <div className="flex items-center justify-between mt-1 text-[10px]">
+                          <span className="text-slate-500">Floor {r.floor}</span>
+                          {r.isAvailable ? (
+                            <span className="text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60">
+                              Free
+                            </span>
+                          ) : (
+                            <span className="text-rose-600 font-semibold bg-rose-50 px-1 py-0.2 rounded">
+                              Booked
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {selectedPhysicalRoomId && (
+                <div className="p-2.5 bg-indigo-50 text-indigo-900 rounded-xl border border-indigo-200 text-xs flex items-center justify-between animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>
+                      Selected{' '}
+                      <strong>
+                        Room #{availableRooms.find((r) => r._id === selectedPhysicalRoomId)?.roomNumber}
+                      </strong>{' '}
+                      (Floor{' '}
+                      {availableRooms.find((r) => r._id === selectedPhysicalRoomId)?.floor}) for your stay.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPhysicalRoomId(null);
+                      setActivePhotoIndex(0);
+                    }}
+                    className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Stay Summary Card with Live Date Change Picker & Full Day-Wise + GST Breakdown */}
             {selectedRoomType && pricing && (
               <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200/90 text-xs space-y-3 shadow-2xs">
@@ -1289,135 +1418,6 @@ export function HotelDetailView({
                 </div>
               </div>
             )}
-
-            {/* Physical Room Selection & Availability Grid */}
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <div>
-                  <label className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
-                    <DoorOpen className="w-4 h-4 text-indigo-600" />
-                    <span>Select Room Number</span>
-                  </label>
-                  <p className="text-[11px] text-slate-500">
-                    Choose your preferred room, or let the system auto-assign the best available room.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] font-semibold">
-                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Available ({availableRooms.filter((r) => r.isAvailable).length})
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    Booked ({availableRooms.filter((r) => !r.isAvailable).length})
-                  </span>
-                </div>
-              </div>
-
-              {loadingRooms ? (
-                <div className="py-6 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
-                  <Clock className="w-5 h-5 animate-spin text-indigo-600" />
-                  <span>Checking real-time room availability for selected dates...</span>
-                </div>
-              ) : availableRooms.length === 0 ? (
-                <div className="p-3 bg-white rounded-xl border border-slate-200 text-center text-xs text-slate-500">
-                  No physical room numbers mapped. Your room will be allocated at the front desk upon check-in.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {/* Auto Assign Option */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPhysicalRoomId(null);
-                      setActivePhotoIndex(0);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      selectedPhysicalRoomId === null
-                        ? 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500/20 text-indigo-950 font-bold'
-                        : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span>Auto-Assign</span>
-                      {selectedPhysicalRoomId === null && (
-                        <Check className="w-3.5 h-3.5 text-indigo-600" />
-                      )}
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">Best room chosen</div>
-                  </button>
-
-                  {/* Individual Physical Rooms */}
-                  {availableRooms.map((r) => {
-                    const isSelected = selectedPhysicalRoomId === r._id;
-                    return (
-                      <button
-                        key={r._id}
-                        type="button"
-                        disabled={!r.isAvailable}
-                        onClick={() => {
-                          setSelectedPhysicalRoomId(r._id);
-                          setActivePhotoIndex(0);
-                        }}
-                        title={r.statusMessage}
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
-                          !r.isAvailable
-                            ? 'bg-slate-100/90 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed'
-                            : isSelected
-                            ? 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500/20 text-indigo-950 font-bold cursor-pointer shadow-xs'
-                            : 'bg-white border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/20 text-slate-800 cursor-pointer'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={!r.isAvailable ? 'line-through' : 'font-extrabold'}>
-                            Room #{r.roomNumber}
-                          </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
-                        </div>
-                        <div className="flex items-center justify-between mt-1 text-[10px]">
-                          <span className="text-slate-500">Floor {r.floor}</span>
-                          {r.isAvailable ? (
-                            <span className="text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60">
-                              Free
-                            </span>
-                          ) : (
-                            <span className="text-rose-600 font-semibold bg-rose-50 px-1 py-0.2 rounded">
-                              Booked
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {selectedPhysicalRoomId && (
-                <div className="p-2.5 bg-indigo-50 text-indigo-900 rounded-xl border border-indigo-200 text-xs flex items-center justify-between animate-in fade-in">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>
-                      Selected{' '}
-                      <strong>
-                        Room #{availableRooms.find((r) => r._id === selectedPhysicalRoomId)?.roomNumber}
-                      </strong>{' '}
-                      (Floor{' '}
-                      {availableRooms.find((r) => r._id === selectedPhysicalRoomId)?.floor}) for your stay.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPhysicalRoomId(null);
-                      setActivePhotoIndex(0);
-                    }}
-                    className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer"
-                  >
-                    Change
-                  </button>
-                </div>
-              )}
-            </div>
 
             {currentUser ? (
               <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-800 flex items-center gap-2">
