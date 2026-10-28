@@ -15,14 +15,49 @@ export function HeroVideoBanner({ children }: HeroVideoBannerProps) {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {
-          setIsPlaying(false);
-        });
+    const video = videoRef.current;
+    if (!video) return;
+
+    // In modern browsers (Chrome/Safari/Edge), the IDL property .muted must be true
+    // for background autoplay to succeed without user interaction.
+    video.defaultMuted = true;
+    video.muted = true;
+
+    if (video.readyState >= 2) {
+      setIsVideoLoaded(true);
     }
+
+    const startPlayback = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setIsVideoLoaded(true);
+          })
+          .catch(() => {
+            // Autoplay deferred until user gesture
+            setIsPlaying(false);
+          });
+      }
+    };
+
+    startPlayback();
+
+    // Start video on first user interaction if browser policy blocked autoplay
+    const handleGesture = () => {
+      if (video && video.paused) {
+        startPlayback();
+      }
+    };
+
+    window.addEventListener('click', handleGesture, { once: true });
+    window.addEventListener('touchstart', handleGesture, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('touchstart', handleGesture);
+    };
   }, []);
 
   const togglePlay = () => {
@@ -58,7 +93,7 @@ export function HeroVideoBanner({ children }: HeroVideoBannerProps) {
         />
       </div>
 
-      {/* Clean Looping Ambient Cloudinary Video Background (Infinite Loop, Zero Moving Lines) */}
+      {/* Clean Looping Ambient Cloudinary Video Background (Infinite Loop) */}
       <video
         ref={videoRef}
         autoPlay
@@ -67,14 +102,19 @@ export function HeroVideoBanner({ children }: HeroVideoBannerProps) {
         playsInline
         preload="auto"
         onLoadedData={() => setIsVideoLoaded(true)}
+        onCanPlay={() => setIsVideoLoaded(true)}
+        onPlay={() => {
+          setIsPlaying(true);
+          setIsVideoLoaded(true);
+        }}
         onEnded={(e) => {
           const v = e.currentTarget;
           v.currentTime = 0;
           v.play().catch(() => {});
         }}
         poster="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1920&q=80"
-        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000 ${
-          isVideoLoaded ? 'opacity-60' : 'opacity-0'
+        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700 ${
+          isVideoLoaded ? 'opacity-75' : 'opacity-40'
         }`}
       >
         <source
@@ -84,7 +124,7 @@ export function HeroVideoBanner({ children }: HeroVideoBannerProps) {
       </video>
 
       {/* Cinematic Multi-Layer Gradient Overlays */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/45 pointer-events-none" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-slate-950/40 pointer-events-none" />
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/25 via-transparent to-transparent pointer-events-none" />
 
       {/* Discrete Video Controls (Top Right) */}
