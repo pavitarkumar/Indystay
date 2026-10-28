@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { RoomTypeCard } from './RoomTypeCard';
-import { DynamicUpiQrScanner } from '@/components/payment/DynamicUpiQrScanner';
+import { RealUpiPaymentGateway } from '@/components/payment/RealUpiPaymentGateway';
 import { HotelChatWidget } from '@/components/chat/HotelChatWidget';
 import { calculateBookingPrice } from '@/utils/pricing';
 import { calculateNights } from '@/utils/date';
@@ -164,6 +164,7 @@ export function HotelDetailView({
   const [applyLoyaltyFreeNight, setApplyLoyaltyFreeNight] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryPhotoIndex, setGalleryPhotoIndex] = useState(0);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -383,21 +384,9 @@ export function HotelDetailView({
     fetchRoomAvailability(roomTypeId);
   };
 
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRoomTypeId) return;
-
-    const isFreeStay = pricing && pricing.totalPrice === 0;
-
-    if (!isFreeStay && !hasOpenedRazorpay && !paymentReferenceInput) {
-      setErrorMsg('Please click the Razorpay button below to pay the mandatory 10% advance deposit before confirming.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMsg('');
-
+  const executeBookingApi = async (paymentRef: string) => {
     try {
+      const isFreeStay = pricing && pricing.totalPrice === 0;
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -411,7 +400,7 @@ export function HotelDetailView({
           children: 0,
           numberOfRooms: rooms,
           paymentType: paymentOption,
-          paymentReference: paymentReferenceInput || (isFreeStay ? 'ROYALTY_FREE_DAY' : `RZP_${Date.now().toString(36).toUpperCase()}`),
+          paymentReference: paymentRef || (isFreeStay ? 'ROYALTY_FREE_DAY' : `UPI_${Date.now().toString(36).toUpperCase()}`),
           applyLoyaltyFreeNight,
           guestDetails: {
             fullName,
@@ -423,27 +412,58 @@ export function HotelDetailView({
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         if (res.status === 401) {
           router.push(`/auth/login?redirect=/hotel/${hotel.slug}`);
-          return;
+          return { success: false, error: 'Please login to complete your booking.' };
         }
-        throw new Error(data.error || 'Failed to submit booking request');
+        return { success: false, error: data.error || 'Failed to submit booking request' };
       }
 
       const assignedRoom = availableRooms.find((r) => r._id === selectedPhysicalRoomId);
-
-      setBookingSuccess({
+      return {
+        success: true,
         reference: data.data.bookingReference,
         id: data.data._id,
         roomNumber: assignedRoom?.roomNumber,
-      });
+      };
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Booking request failed');
-    } finally {
-      setIsSubmitting(false);
+      return { success: false, error: err instanceof Error ? err.message : 'Network error during booking.' };
     }
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRoomTypeId) return;
+
+    if (!fullName.trim() || !email.trim() || !phone.trim()) {
+      setErrorMsg('Please enter your primary guest Name, Email, and Phone number.');
+      return;
+    }
+
+    const isFreeStay = pricing && pricing.totalPrice === 0;
+
+    // 1. If 100% Free Stay covered by Royalty Club reward, book directly!
+    if (isFreeStay) {
+      setIsSubmitting(true);
+      setErrorMsg('');
+      const res = await executeBookingApi('ROYALTY_FREE_DAY');
+      setIsSubmitting(false);
+      if (res.success && res.reference && res.id) {
+        setBookingSuccess({
+          reference: res.reference,
+          id: res.id,
+          roomNumber: res.roomNumber,
+        });
+      } else {
+        setErrorMsg(res.error || 'Failed to confirm free stay reservation.');
+      }
+      return;
+    }
+
+    // 2. Real Payment Gateway with 5-Minute Timer & Auto Verification
+    setErrorMsg('');
+    setIsPaymentModalOpen(true);
   };
 
   const allImages = [
@@ -1568,22 +1588,25 @@ export function HotelDetailView({
                     </button>
                   </div>
 
-                  {/* Dynamic UPI QR Code Scanner with Pre-Filled Amount (Auto-Calculated) */}
-                  <DynamicUpiQrScanner
-                    amount={
-                      paymentOption === 'ADVANCE_10'
-                        ? Math.round(pricing.totalPrice * 0.10)
-                        : pricing.totalPrice
-                    }
-                    hotelName={hotel.name}
-                    paymentType={paymentOption}
-                    paymentReference={paymentReferenceInput}
-                    onReferenceChange={(val) => {
-                      setPaymentReferenceInput(val);
-                      if (val.trim()) setHasOpenedRazorpay(true);
-                    }}
-                    onPaymentConfirmed={() => setHasOpenedRazorpay(true)}
-                  />
+                  {/* Payment Overview Card */}
+                  <div className="p-3 bg-gradient-to-r from-indigo-50/80 via-slate-50 to-indigo-50/50 border border-indigo-100 rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                        ⚡
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800">
+                          {paymentOption === 'ADVANCE_10' ? '10% Token Advance' : '100% Full Payment'}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          NPCI UPI QR Scanner • 5-min live session • Auto-verified
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-indigo-700 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shrink-0">
+                      ₹{(paymentOption === 'ADVANCE_10' ? Math.round(pricing.totalPrice * 0.10) : pricing.totalPrice).toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
               )
             )}
@@ -1608,7 +1631,7 @@ export function HotelDetailView({
             )}
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400">Payment processed on confirmation</span>
+              <span className="text-[11px] text-slate-400">Instant UPI QR payment with 5-min timer</span>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -1619,13 +1642,45 @@ export function HotelDetailView({
                   Cancel
                 </Button>
                 <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>
-                  Confirm & Request Stay
+                  {pricing && pricing.totalPrice === 0
+                    ? 'Confirm 100% Free Stay'
+                    : `Proceed to Pay ₹${(paymentOption === 'ADVANCE_10' ? Math.round(pricing?.totalPrice ? pricing.totalPrice * 0.10 : 0) : (pricing?.totalPrice || 0)).toLocaleString('en-IN')} ➔`}
                 </Button>
               </div>
             </div>
           </form>
         )}
       </Modal>
+
+      {/* Dedicated Real UPI Payment Gateway with 5-Minute Timer & Auto-Verification */}
+      {pricing && pricing.totalPrice > 0 && selectedRoomType && (
+        <RealUpiPaymentGateway
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          amount={paymentOption === 'ADVANCE_10' ? Math.round(pricing.totalPrice * 0.10) : pricing.totalPrice}
+          totalPrice={pricing.totalPrice}
+          paymentType={paymentOption}
+          hotelName={hotel.name}
+          hotelCity={hotel.city}
+          roomTypeName={selectedRoomType.roomType.name}
+          roomNumber={selectedPhysicalRoom?.roomNumber}
+          nights={nights}
+          checkIn={checkIn}
+          checkOut={checkOut}
+          guestName={fullName || 'Valued Guest'}
+          guestEmail={email || ''}
+          guestPhone={phone || ''}
+          onConfirmBooking={(paymentRef: string) => executeBookingApi(paymentRef)}
+          onSuccess={(data) => {
+            setIsPaymentModalOpen(false);
+            setBookingSuccess({
+              reference: data.reference,
+              id: data.id,
+              roomNumber: data.roomNumber,
+            });
+          }}
+        />
+      )}
 
       {/* Direct Hotel Chat Widget */}
       <HotelChatWidget
