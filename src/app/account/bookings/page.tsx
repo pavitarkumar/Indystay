@@ -592,37 +592,37 @@ function BookingsHubContent() {
         {/* ========================================================================= */}
         {mainTab === 'royalty' && (
           <div className="space-y-8 animate-in fade-in duration-200">
-            {/* Digital Membership Pass Card */}
-            <div className="relative rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-2xl border border-indigo-800/40 overflow-hidden">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+            {/* Digital Membership Pass Card (Pristine Luxury Light Theme) */}
+            <div className="relative rounded-3xl bg-gradient-to-br from-amber-50/70 via-white to-amber-100/40 text-slate-900 p-6 sm:p-8 shadow-xs border-2 border-amber-300/80 overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-amber-200/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-100/20 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/30 font-black">
-                    <Crown className="w-6 h-6 fill-slate-950" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-amber-200/70">
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/25 font-black shrink-0">
+                    <Crown className="w-7 h-7 fill-white text-amber-100" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold tracking-widest uppercase text-amber-300">
+                      <span className="text-xs font-mono font-bold tracking-widest uppercase text-amber-800">
                         IndiStay Royalty Club
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-200/70 text-amber-900 border border-amber-300 text-[10px] font-black uppercase">
                         {loyalty?.tierName || 'Silver Member'}
                       </span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
                       {user?.name || 'Valued Member'}
                     </h2>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="text-left md:text-right">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <div className="text-left md:text-right bg-white/90 backdrop-blur-xs p-3.5 px-5 rounded-2xl border border-amber-200/80 shadow-2xs">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                       Free Nights Balance
                     </span>
-                    <span className="text-2xl font-black text-emerald-400">
+                    <span className="text-2xl font-black text-emerald-600">
                       {loyalty?.freeNightsAvailable || 0} 100% Free Day(s)
                     </span>
                   </div>
@@ -630,20 +630,26 @@ function BookingsHubContent() {
               </div>
 
               {/* Card Footer Details */}
-              <div className="relative z-10 pt-4 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-3">
+              <div className="relative z-10 pt-4 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-3">
                 <div className="flex items-center gap-2">
-                  <span>Customer ID:</span>
+                  <span className="font-semibold text-slate-500">Customer ID:</span>
                   <button
                     type="button"
                     onClick={handleCopyCustomerId}
-                    className="font-mono font-bold text-white hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
+                    className="font-mono font-bold text-slate-900 bg-white hover:bg-amber-50 px-2.5 py-1 rounded-lg border border-slate-200 hover:border-amber-300 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                    title="Click to copy Customer ID"
                   >
                     <span>{user?.id ? `IND-CUST-${user.id.slice(-6).toUpperCase()}` : 'IND-CUST'}</span>
-                    {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                    {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
                   </button>
                 </div>
-                <div>Status: <span className="font-bold text-emerald-400">Active Membership</span></div>
-                <div>Reward Rate: <span className="font-bold text-amber-300">1 Free Night Every 5 Stays</span></div>
+                <div className="flex items-center gap-1.5 font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Active Membership Status</span>
+                </div>
+                <div className="font-semibold text-slate-500">
+                  Reward Rate: <span className="font-black text-amber-800">1 Free Night Every 5 Stays</span>
+                </div>
               </div>
             </div>
 
@@ -714,15 +720,15 @@ function BookingsHubContent() {
                   </div>
                 </div>
 
-                {/* Right Visual 5-Slice SVG Wheel */}
-                <div className="p-6 sm:p-8 rounded-3xl bg-slate-950 text-white flex flex-col items-center justify-center shrink-0 shadow-xl border border-slate-900">
+                {/* Right Visual 5-Slice SVG Wheel in Light Theme Container */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-amber-50/50 via-white to-slate-50 text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-xs border border-amber-200/80">
                   <LoyaltyWheel
                     currentSlices={loyalty?.currentSlices || 0}
                     freeNightsAvailable={loyalty?.freeNightsAvailable || 0}
                     totalValidStays={loyalty?.totalValidStays || 0}
                     size="md"
                   />
-                  <span className="text-[11px] font-bold text-amber-300 mt-4 tracking-wide uppercase">
+                  <span className="text-[11px] font-black text-amber-900 mt-4 tracking-wide uppercase bg-amber-100/90 px-3.5 py-1 rounded-full border border-amber-300">
                     5 Stays = 1 Day 100% Free Room
                   </span>
                 </div>
@@ -778,39 +784,39 @@ function BookingsHubContent() {
               </div>
             </div>
 
-            {/* 3-Step Process Guide */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl">
-              <h3 className="text-base sm:text-lg font-black tracking-tight mb-6 text-center">
+            {/* 3-Step Process Guide (Light Theme) */}
+            <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xs border border-slate-200/90">
+              <h3 className="text-base sm:text-lg font-black tracking-tight mb-6 text-center text-slate-900">
                 How It Works in 3 Simple Steps
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-white/10 text-amber-400 flex items-center justify-center font-black text-sm border border-white/20">
+                <div className="flex flex-col items-center text-center space-y-2.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-slate-200/80 text-slate-800 flex items-center justify-center font-black text-sm border border-slate-300/80">
                     1
                   </div>
-                  <h4 className="text-sm font-bold text-white">Book &amp; Stay</h4>
-                  <p className="text-xs text-slate-400 max-w-xs">
+                  <h4 className="text-sm font-bold text-slate-900">Book &amp; Stay</h4>
+                  <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
                     Choose from 40+ verified properties across India and complete your stay.
                   </p>
                 </div>
 
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-white/10 text-amber-400 flex items-center justify-center font-black text-sm border border-white/20">
+                <div className="flex flex-col items-center text-center space-y-2.5 p-4 rounded-2xl bg-slate-50/70 border border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-black text-sm border border-amber-300">
                     2
                   </div>
-                  <h4 className="text-sm font-bold text-white">Fill 1 Slice Per Stay</h4>
-                  <p className="text-xs text-slate-400 max-w-xs">
+                  <h4 className="text-sm font-bold text-slate-900">Fill 1 Slice Per Stay</h4>
+                  <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
                     Your 5-slice wheel automatically advances 1 slice after hotel check-out.
                   </p>
                 </div>
 
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shadow-md">
+                <div className="flex flex-col items-center text-center space-y-2.5 p-4 rounded-2xl bg-amber-50/80 border border-amber-200">
+                  <div className="w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shadow-md shadow-amber-500/20">
                     3
                   </div>
-                  <h4 className="text-sm font-bold text-amber-300">Claim 100% Free Room</h4>
-                  <p className="text-xs text-slate-400 max-w-xs">
+                  <h4 className="text-sm font-bold text-amber-900">Claim 100% Free Room</h4>
+                  <p className="text-xs text-slate-600 max-w-xs leading-relaxed">
                     Use your unlocked voucher on any hotel booking for 1 completely free day!
                   </p>
                 </div>

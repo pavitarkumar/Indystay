@@ -153,10 +153,10 @@ export function LoyaltyWheel({
           cx={cx}
           cy={cy}
           r={r - 4}
-          fill={isRewardReady ? '#064E3B' : '#0F172A'}
+          fill={isRewardReady ? '#ECFDF5' : '#FFFFFF'}
           stroke={isRewardReady ? '#10B981' : '#F59E0B'}
-          strokeWidth="2.5"
-          className="shadow-inner"
+          strokeWidth="3"
+          className="shadow-sm"
         />
 
         {/* Center Content */}
@@ -168,7 +168,7 @@ export function LoyaltyWheel({
                 y={cy - 14}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#34D399"
+                fill="#059669"
                 fontSize={size === 'sm' ? '12' : '16'}
                 fontWeight="900"
               >
@@ -179,7 +179,7 @@ export function LoyaltyWheel({
                 y={cy + 3}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#FFFFFF"
+                fill="#065F46"
                 fontSize={size === 'sm' ? '9' : '11'}
                 fontWeight="800"
                 letterSpacing="0.05em"
@@ -191,7 +191,7 @@ export function LoyaltyWheel({
                 y={cy + 16}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#A7F3D0"
+                fill="#047857"
                 fontSize={size === 'sm' ? '7' : '9'}
                 fontWeight="600"
               >
@@ -205,7 +205,7 @@ export function LoyaltyWheel({
                 y={cy - 12}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#FBBF24"
+                fill="#D97706"
                 fontSize={size === 'sm' ? '12' : '14'}
                 fontWeight="900"
               >
@@ -216,7 +216,7 @@ export function LoyaltyWheel({
                 y={cy + 2}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#FFFFFF"
+                fill="#0F172A"
                 fontSize={size === 'sm' ? '12' : '15'}
                 fontWeight="900"
               >
@@ -227,7 +227,7 @@ export function LoyaltyWheel({
                 y={cy + 16}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="#94A3B8"
+                fill="#64748B"
                 fontSize={size === 'sm' ? '7' : '9'}
                 fontWeight="700"
                 letterSpacing="0.05em"
