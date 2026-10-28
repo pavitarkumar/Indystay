@@ -9,11 +9,11 @@ export const metadata: Metadata = {
     'Discover and book handpicked luxury hotels, boutique resorts, and royal havelis across India with instant verified confirmation.',
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/icon.png', sizes: '512x512', type: 'image/png' },
       { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
     ],
-    shortcut: '/icon.svg',
+    shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
 };

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -63,18 +64,14 @@ export function AdminSidebar({ type, hotelName }: AdminSidebarProps) {
         </Link>
 
         <div className="flex items-center gap-3">
-          <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs ${
-              type === 'super-admin'
-                ? 'bg-gradient-to-br from-purple-600 to-indigo-600'
-                : 'bg-gradient-to-br from-indigo-600 to-blue-600'
-            }`}
-          >
-            {type === 'super-admin' ? (
-              <ShieldCheck className="w-5 h-5" />
-            ) : (
-              <Building className="w-5 h-5" />
-            )}
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200 shrink-0">
+            <Image
+              src="/icon.png"
+              alt="IndiStay Logo"
+              fill
+              sizes="40px"
+              className="object-cover"
+            />
           </div>
           <div className="min-w-0">
             <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">

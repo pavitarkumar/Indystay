@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Hotel,
   Mail,
   Lock,
   ArrowRight,
@@ -14,8 +13,6 @@ import {
   Sparkles,
   ShieldCheck,
   Star,
-  Building2,
-  UserCheck,
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,23 +28,6 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'CUSTOMER' | 'HOTEL_ADMIN' | 'SUPER_ADMIN'>('CUSTOMER');
-
-  // Quick Demo Autofill Helper for Testing
-  const handleQuickFill = (role: 'CUSTOMER' | 'HOTEL_ADMIN' | 'SUPER_ADMIN') => {
-    setSelectedRole(role);
-    setError('');
-    if (role === 'SUPER_ADMIN') {
-      setEmail('admin@indistay.com');
-      setPassword('IndiStayAdmin#2026!');
-    } else if (role === 'HOTEL_ADMIN') {
-      setEmail('hotel.admin@example.com');
-      setPassword('Password#123');
-    } else {
-      setEmail('');
-      setPassword('');
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +89,15 @@ function LoginForm() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-              <Hotel className="w-5 h-5" />
+            <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-xl border border-white/20 shrink-0">
+              <Image
+                src="/icon.png"
+                alt="IndiStay Logo"
+                fill
+                sizes="48px"
+                className="object-cover"
+                priority
+              />
             </div>
             <div>
               <h2 className="text-xl font-black tracking-tight text-white">IndiStay</h2>
@@ -163,8 +150,15 @@ function LoginForm() {
       <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
         {/* Mobile Brand Header */}
         <div className="flex lg:hidden items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
-            <Hotel className="w-5 h-5" />
+          <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-md border border-slate-200 shrink-0">
+            <Image
+              src="/icon.png"
+              alt="IndiStay Logo"
+              fill
+              sizes="44px"
+              className="object-cover"
+              priority
+            />
           </div>
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">IndiStay</h2>
@@ -178,55 +172,8 @@ function LoginForm() {
             Welcome Back
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
-            Enter your credentials to access your bookings or hotel management console.
+            Enter your email and password to access your bookings or dashboard.
           </p>
-        </div>
-
-        {/* Quick Role Autofill Selector */}
-        <div className="mb-6">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Select Account Role
-          </label>
-          <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100/80 rounded-2xl border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('CUSTOMER')}
-              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                selectedRole === 'CUSTOMER'
-                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Traveller</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickFill('HOTEL_ADMIN')}
-              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                selectedRole === 'HOTEL_ADMIN'
-                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Hotel Admin</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickFill('SUPER_ADMIN')}
-              className={`py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                selectedRole === 'SUPER_ADMIN'
-                  ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/80'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Super Admin</span>
-            </button>
-          </div>
         </div>
 
         {/* Error Notification */}

@@ -88,8 +88,15 @@ function RegisterForm() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-              <Hotel className="w-5 h-5" />
+            <div className="relative w-12 h-12 rounded-2xl overflow-hidden shadow-xl border border-white/20 shrink-0">
+              <Image
+                src="/icon.png"
+                alt="IndiStay Logo"
+                fill
+                sizes="48px"
+                className="object-cover"
+                priority
+              />
             </div>
             <div>
               <h2 className="text-xl font-black tracking-tight text-white">IndiStay</h2>
@@ -141,8 +148,15 @@ function RegisterForm() {
       {/* Right Column: Registration Form */}
       <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
         <div className="flex lg:hidden items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
-            <Hotel className="w-5 h-5" />
+          <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-md border border-slate-200 shrink-0">
+            <Image
+              src="/icon.png"
+              alt="IndiStay Logo"
+              fill
+              sizes="44px"
+              className="object-cover"
+              priority
+            />
           </div>
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">IndiStay</h2>
