@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/lib/db/connection';
 import { Hotel } from '@/models/Hotel';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
 import { buildLocationSearchFilter, rankHotelsBySearchRelevance } from '@/lib/search/locationFilter';
+import { normalizeDateString } from '@/utils/date';
 import { Building2, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,8 +29,8 @@ interface PageProps {
 export default async function HotelsSearchPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const city = params.city || '';
-  const checkIn = params.checkIn || '';
-  const checkOut = params.checkOut || '';
+  const checkIn = normalizeDateString(params.checkIn) || params.checkIn || '';
+  const checkOut = normalizeDateString(params.checkOut) || params.checkOut || '';
   const guests = parseInt(params.guests || '1', 10);
   const rooms = parseInt(params.rooms || '1', 10);
   const propertyType = params.propertyType || 'ALL';

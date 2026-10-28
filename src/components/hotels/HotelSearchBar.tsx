@@ -14,6 +14,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { normalizeDateString } from '@/utils/date';
 
 interface DestinationItem {
   id: string;
@@ -54,8 +55,8 @@ export function HotelSearchBar({
     .split('T')[0];
 
   const [city, setCity] = useState(initialCity);
-  const [checkIn, setCheckIn] = useState(initialCheckIn || defCheckIn);
-  const [checkOut, setCheckOut] = useState(initialCheckOut || defCheckOut);
+  const [checkIn, setCheckIn] = useState(normalizeDateString(initialCheckIn) || initialCheckIn || defCheckIn);
+  const [checkOut, setCheckOut] = useState(normalizeDateString(initialCheckOut) || initialCheckOut || defCheckOut);
   const [guests, setGuests] = useState(initialGuests);
   const [rooms, setRooms] = useState(initialRooms);
 

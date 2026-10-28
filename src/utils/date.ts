@@ -4,12 +4,52 @@
  */
 
 export function parseDateOnly(dateStrOrObj: string | Date): Date {
-  const d = new Date(dateStrOrObj);
+  if (dateStrOrObj instanceof Date) {
+    if (isNaN(dateStrOrObj.getTime())) {
+      throw new Error('Invalid Date object');
+    }
+    return new Date(Date.UTC(dateStrOrObj.getUTCFullYear(), dateStrOrObj.getUTCMonth(), dateStrOrObj.getUTCDate(), 0, 0, 0, 0));
+  }
+
+  const str = String(dateStrOrObj || '').trim();
+  if (!str) {
+    throw new Error('Empty date string');
+  }
+
+  // 1. DD-MM-YYYY or DD/MM/YYYY (e.g., "30-10-2026", "02-11-2026", "30/10/2026")
+  const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  }
+
+  // 2. YYYY-MM-DD or YYYY/MM/DD (e.g. "2026-10-30")
+  const ymdMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  }
+
+  const d = new Date(str);
   if (isNaN(d.getTime())) {
     throw new Error(`Invalid date string: ${dateStrOrObj}`);
   }
   // Normalize to UTC midnight for date-only comparison
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+}
+
+export function normalizeDateString(dateStrOrObj?: string | Date): string {
+  if (!dateStrOrObj) return '';
+  try {
+    const d = parseDateOnly(dateStrOrObj);
+    return formatDateYYYYMMDD(d);
+  } catch {
+    return typeof dateStrOrObj === 'string' ? dateStrOrObj : '';
+  }
 }
 
 export function calculateNights(checkIn: Date | string, checkOut: Date | string): number {

@@ -8,6 +8,7 @@ import { requireRole } from '@/lib/auth/rbac';
 import { createHotelSchema, searchHotelsSchema } from '@/lib/validation/hotel.schema';
 import { getHotelRoomTypesAvailability } from '@/services/inventory.service';
 import { buildLocationSearchFilter, rankHotelsBySearchRelevance } from '@/lib/search/locationFilter';
+import { normalizeDateString } from '@/utils/date';
 import { createNotification } from '@/lib/notifications/notification.service';
 import { createAuditLog } from '@/lib/audit/audit.service';
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const {
+    let {
       city,
       checkIn,
       checkOut,
@@ -40,6 +41,9 @@ export async function GET(req: NextRequest) {
       page,
       limit,
     } = parsed.data;
+
+    if (checkIn) checkIn = normalizeDateString(checkIn) || checkIn;
+    if (checkOut) checkOut = normalizeDateString(checkOut) || checkOut;
 
     // Base filter: only public, approved, published properties
     const locationSearch = buildLocationSearchFilter(city);
