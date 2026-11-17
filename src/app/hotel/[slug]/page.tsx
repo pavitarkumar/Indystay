@@ -115,6 +115,7 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
               url: ra.roomType.model3d.url,
               thumbnailUrl: ra.roomType.model3d.thumbnailUrl,
               description: ra.roomType.model3d.description,
+              themeStyle: ra.roomType.model3d.themeStyle,
             }
           : undefined,
       },

@@ -48,6 +48,7 @@ interface RoomTypeCardProps {
       url: string;
       thumbnailUrl?: string;
       description?: string;
+      themeStyle?: string;
     };
   };
   availableCount: number;
@@ -297,6 +298,7 @@ export function RoomTypeCard({
             modelUrl={roomType.model3d?.url || '/models/luxury-armchair.glb'}
             roomName={roomType.name}
             description={roomType.model3d?.description || 'Interactive 3D Suite Visualization'}
+            themeStyle={roomType.model3d?.themeStyle as any}
             onClose={() => setShow3D(false)}
           />
         </ViewerErrorBoundary>

@@ -76,6 +76,7 @@ interface RoomTypeData {
       url: string;
       thumbnailUrl?: string;
       description?: string;
+      themeStyle?: string;
     };
   };
   totalPhysicalRooms: number;
@@ -209,6 +210,7 @@ export function HotelDetailView({
     model3d: {
       url: string;
       description?: string;
+      themeStyle?: string;
     };
   } | null>(null);
 
@@ -1831,6 +1833,7 @@ export function HotelDetailView({
             modelUrl={active3DRoom.model3d?.url}
             roomName={active3DRoom.name}
             description={active3DRoom.model3d?.description}
+            themeStyle={active3DRoom.model3d?.themeStyle as any}
             onClose={() => setActive3DRoom(null)}
           />
         </ViewerErrorBoundary>
