@@ -8,6 +8,29 @@ export interface IRoomTypeImage {
   caption?: string;
 }
 
+export interface IPanoramaHotspot {
+  pitch: number;
+  yaw: number;
+  label: string;
+  description?: string;
+}
+
+export interface IPanoramaScene {
+  url: string;
+  sceneName: string;
+  sceneId: string;
+  order: number;
+  description?: string;
+  hotspots?: IPanoramaHotspot[];
+}
+
+export interface IModel3D {
+  url: string;
+  thumbnailUrl?: string;
+  description?: string;
+  config?: Record<string, unknown>;
+}
+
 export interface IRoomType extends Document {
   hotelId: mongoose.Types.ObjectId;
   name: string;
@@ -23,6 +46,9 @@ export interface IRoomType extends Document {
   sizeSqFt?: number;
   images: IRoomTypeImage[];
   status: RoomTypeStatus;
+  // Virtual tour assets (optional — existing rooms unaffected)
+  panoramas?: IPanoramaScene[];
+  model3d?: IModel3D | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +79,31 @@ const RoomTypeSchema = new Schema<IRoomType>(
       enum: ['ACTIVE', 'INACTIVE'],
       default: 'ACTIVE',
       index: true,
+    },
+    // 360° panorama scenes — optional, additive
+    panoramas: [
+      {
+        url: { type: String, required: true },
+        sceneName: { type: String, required: true },
+        sceneId: { type: String, required: true },
+        order: { type: Number, default: 0 },
+        description: { type: String },
+        hotspots: [
+          {
+            pitch: { type: Number, required: true },
+            yaw: { type: Number, required: true },
+            label: { type: String, required: true },
+            description: { type: String },
+          },
+        ],
+      },
+    ],
+    // 3D model — optional, additive
+    model3d: {
+      url: { type: String },
+      thumbnailUrl: { type: String },
+      description: { type: String },
+      config: { type: Schema.Types.Mixed },
     },
   },
   {

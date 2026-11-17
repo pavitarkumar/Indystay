@@ -1,5 +1,31 @@
 import { z } from 'zod';
 
+// Hotspot within a 360° panorama scene
+const panoramaHotspotSchema = z.object({
+  pitch: z.number(),
+  yaw: z.number(),
+  label: z.string().min(1),
+  description: z.string().optional(),
+});
+
+// A single 360° panorama scene
+export const panoramaSceneSchema = z.object({
+  url: z.string().url('Panorama URL must be a valid URL'),
+  sceneName: z.string().min(1, 'Scene name is required').max(80),
+  sceneId: z.string().min(1, 'Scene ID is required').max(80),
+  order: z.coerce.number().default(0),
+  description: z.string().optional(),
+  hotspots: z.array(panoramaHotspotSchema).default([]),
+});
+
+// 3D model asset
+export const model3dSchema = z.object({
+  url: z.string().url('Model URL must be a valid URL'),
+  thumbnailUrl: z.string().url('Thumbnail must be a valid URL').optional().or(z.literal('')),
+  description: z.string().optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+});
+
 export const createRoomTypeSchema = z.object({
   name: z.string().min(2, 'Room type name must be at least 2 characters').max(80),
   description: z.string().optional(),
@@ -21,6 +47,9 @@ export const createRoomTypeSchema = z.object({
     )
     .default([]),
   status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  // Virtual tour fields — optional
+  panoramas: z.array(panoramaSceneSchema).optional(),
+  model3d: model3dSchema.optional().nullable(),
 });
 
 export const updateRoomTypeSchema = createRoomTypeSchema.partial();

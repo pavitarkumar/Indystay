@@ -102,6 +102,21 @@ export default async function HotelDetailPage({ params, searchParams }: PageProp
           url: img.url,
           caption: img.caption,
         })),
+        panoramas: (ra.roomType.panoramas || []).map((p: any) => ({
+          url: p.url,
+          sceneName: p.sceneName,
+          sceneId: p.sceneId,
+          order: p.order,
+          description: p.description,
+          hotspots: p.hotspots,
+        })),
+        model3d: ra.roomType.model3d
+          ? {
+              url: ra.roomType.model3d.url,
+              thumbnailUrl: ra.roomType.model3d.thumbnailUrl,
+              description: ra.roomType.model3d.description,
+            }
+          : undefined,
       },
       totalPhysicalRooms: ra.totalPhysicalRooms,
       availableRoomsCount: ra.availableRoomsCount,

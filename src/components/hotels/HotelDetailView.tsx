@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
   MapPin,
@@ -29,7 +30,17 @@ import {
   ExternalLink,
   Crown,
   Gift,
+  Eye,
+  Box,
 } from 'lucide-react';
+
+const Panorama360Viewer = dynamic(() => import('@/components/viewers/Panorama360Viewer'), {
+  ssr: false,
+});
+const Room3DViewer = dynamic(() => import('@/components/viewers/Room3DViewer'), {
+  ssr: false,
+});
+import { ViewerErrorBoundary } from '@/components/viewers/ViewerErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -52,6 +63,20 @@ interface RoomTypeData {
     amenities: string[];
     sizeSqFt?: number;
     images?: Array<{ url: string; caption?: string }>;
+    // Virtual tour assets — optional
+    panoramas?: Array<{
+      url: string;
+      sceneName: string;
+      sceneId: string;
+      order?: number;
+      description?: string;
+      hotspots?: Array<{ pitch: number; yaw: number; label: string; description?: string }>;
+    }>;
+    model3d?: {
+      url: string;
+      thumbnailUrl?: string;
+      description?: string;
+    };
   };
   totalPhysicalRooms: number;
   availableRoomsCount: number;
@@ -165,6 +190,34 @@ export function HotelDetailView({
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryPhotoIndex, setGalleryPhotoIndex] = useState(0);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Virtual Tour Viewers State
+  const [active360Room, setActive360Room] = useState<{
+    name: string;
+    panoramas: Array<{
+      url: string;
+      sceneName: string;
+      sceneId: string;
+      order?: number;
+      description?: string;
+      hotspots?: Array<{ pitch: number; yaw: number; label: string; description?: string }>;
+    }>;
+  } | null>(null);
+
+  const [active3DRoom, setActive3DRoom] = useState<{
+    name: string;
+    model3d: {
+      url: string;
+      description?: string;
+    };
+  } | null>(null);
+
+  const roomWith360 = hotel.roomTypes.find(
+    (rt) => rt.roomType.panoramas && rt.roomType.panoramas.length > 0
+  );
+  const roomWith3D = hotel.roomTypes.find(
+    (rt) => rt.roomType.model3d && rt.roomType.model3d.url
+  );
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -538,6 +591,24 @@ export function HotelDetailView({
 
       {/* Image Gallery Showcase */}
       <div className="relative mt-6 rounded-2xl overflow-hidden shadow-sm group">
+        {/* Virtual Experience Badges */}
+        {(roomWith360 || roomWith3D) && (
+          <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2 pointer-events-none">
+            {roomWith360 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-xl border border-white/20 shadow-md">
+                <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                360° Virtual Tour
+              </span>
+            )}
+            {roomWith3D && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-xl border border-white/20 shadow-md">
+                <Box className="w-3.5 h-3.5 text-violet-400" />
+                Interactive 3D View
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[320px] sm:h-[440px]">
           <div
             onClick={() => {
@@ -582,18 +653,65 @@ export function HotelDetailView({
           </div>
         </div>
 
-        {/* View All Photos Button */}
-        <button
-          type="button"
-          onClick={() => {
-            setGalleryPhotoIndex(0);
-            setIsGalleryOpen(true);
-          }}
-          className="absolute bottom-4 right-4 z-10 flex items-center gap-2 px-4 py-2.5 bg-white/95 hover:bg-white text-slate-800 text-xs font-bold rounded-xl shadow-lg hover:shadow-xl backdrop-blur-md border border-slate-200 transition-all transform hover:scale-105 cursor-pointer"
-        >
-          <Camera className="w-4 h-4 text-indigo-600" />
-          <span>View All Photos ({fullGallery.length})</span>
-        </button>
+        {/* Gallery Action Buttons: 360, 3D, and Photos */}
+        <div className="absolute bottom-4 right-4 z-10 flex flex-wrap items-center gap-2">
+          {roomWith360 && (
+            <button
+              type="button"
+              onClick={() =>
+                setActive360Room({
+                  name: `${hotel.name} — ${roomWith360.roomType.name}`,
+                  panoramas: roomWith360.roomType.panoramas && roomWith360.roomType.panoramas.length > 0
+                    ? roomWith360.roomType.panoramas
+                    : [
+                        {
+                          sceneId: 'suite-bedroom',
+                          sceneName: 'Master Bedroom',
+                          url: '/panoramas/suite-bedroom-360.jpg',
+                          order: 1,
+                          description: 'Spacious master bedroom with plush king bed',
+                        },
+                      ],
+                })
+              }
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-xl backdrop-blur-md border border-indigo-500 transition-all transform hover:scale-105 cursor-pointer"
+            >
+              <Eye className="w-4 h-4 text-white" />
+              <span>Explore in 360°</span>
+            </button>
+          )}
+
+          {roomWith3D && (
+            <button
+              type="button"
+              onClick={() =>
+                setActive3DRoom({
+                  name: `${hotel.name} — ${roomWith3D.roomType.name}`,
+                  model3d: roomWith3D.roomType.model3d || {
+                    url: '/models/luxury-armchair.glb',
+                    description: 'Interactive 3D Suite Visualization',
+                  },
+                })
+              }
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-xl backdrop-blur-md border border-violet-500 transition-all transform hover:scale-105 cursor-pointer"
+            >
+              <Box className="w-4 h-4 text-white" />
+              <span>View in 3D</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              setGalleryPhotoIndex(0);
+              setIsGalleryOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white/95 hover:bg-white text-slate-800 text-xs font-bold rounded-xl shadow-lg hover:shadow-xl backdrop-blur-md border border-slate-200 transition-all transform hover:scale-105 cursor-pointer"
+          >
+            <Camera className="w-4 h-4 text-indigo-600" />
+            <span>View Photos ({fullGallery.length})</span>
+          </button>
+        </div>
       </div>
 
       {/* Full Luxury Hotel Photo Gallery Lightbox */}
@@ -1688,6 +1806,35 @@ export function HotelDetailView({
         hotelName={hotel.name}
         user={currentUser ? { id: currentUser.id || '', name: currentUser.name || 'Guest', role: currentUser.role } : null}
       />
+
+      {/* 360° Panorama Virtual Tour Viewer */}
+      {active360Room && (
+        <ViewerErrorBoundary
+          title="360° Virtual Tour"
+          onClose={() => setActive360Room(null)}
+        >
+          <Panorama360Viewer
+            scenes={active360Room.panoramas}
+            roomName={active360Room.name}
+            onClose={() => setActive360Room(null)}
+          />
+        </ViewerErrorBoundary>
+      )}
+
+      {/* 3D Interactive Room Model Viewer */}
+      {active3DRoom && (
+        <ViewerErrorBoundary
+          title="3D Room Suite"
+          onClose={() => setActive3DRoom(null)}
+        >
+          <Room3DViewer
+            modelUrl={active3DRoom.model3d?.url}
+            roomName={active3DRoom.name}
+            description={active3DRoom.model3d?.description}
+            onClose={() => setActive3DRoom(null)}
+          />
+        </ViewerErrorBoundary>
+      )}
     </div>
   );
 }

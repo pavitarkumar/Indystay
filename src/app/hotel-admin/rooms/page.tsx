@@ -23,6 +23,9 @@ import {
   Upload,
   Image as ImageIcon,
   Link as LinkIcon,
+  Eye,
+  Box,
+  Trash,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -145,6 +148,18 @@ export default function HotelAdminRoomsPage() {
   const [dbSpecialRequests, setDbSpecialRequests] = useState('');
   const [isSavingDirectBooking, setIsSavingDirectBooking] = useState(false);
   const [directBookError, setDirectBookError] = useState('');
+
+  // Virtual Tour Assets State
+  const [isVirtualTourModalOpen, setIsVirtualTourModalOpen] = useState(false);
+  const [vtRoomType, setVtRoomType] = useState<RoomType | null>(null);
+  const [vtPanoramas, setVtPanoramas] = useState<Array<{ url: string; sceneName: string; sceneId: string; order: number; description?: string }>>([]);
+  const [vtModel3dUrl, setVtModel3dUrl] = useState('');
+  const [vtModel3dDescription, setVtModel3dDescription] = useState('');
+  const [vtNewSceneUrl, setVtNewSceneUrl] = useState('');
+  const [vtNewSceneName, setVtNewSceneName] = useState('');
+  const [vtNewSceneDesc, setVtNewSceneDesc] = useState('');
+  const [isSavingVt, setIsSavingVt] = useState(false);
+  const [vtError, setVtError] = useState('');
 
   const showSuccess = (msg: string) => {
     setSuccessBanner(msg);
